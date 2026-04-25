@@ -2,14 +2,25 @@ version: '3.8'
 
 services:
   sdr-dsp:
-    image: alpine:latest # Placeholder for the sdr-dsp image
+    build:
+      context: ./sdr-dsp
+      dockerfile: Dockerfile
     container_name: sdr-dsp
+    restart: on-failure
+    privileged: true          # Required for USB SDR device access
+    devices:
+      - /dev/bus/usb:/dev/bus/usb
     networks:
       - navtex_net
     volumes:
       - sqlite_data:/data
-    # privileged: true # Likely needed for SDRPlay USB device access
-    
+    environment:
+      - SDR_ANTENNA=A
+      - SDR_LNA_STATE=0
+      - BROKER_URL=http://api-broker:8000/messages
+    depends_on:
+      - api-broker
+
   api-broker:
     build: 
       context: ./api
