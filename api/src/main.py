@@ -5,6 +5,21 @@ from .database import engine, get_db, Base
 from .models import Message
 from .schemas import MessageCreate, MessageRead
 from .broadcast import manager
+from .config_schema import SDRConfig
+import json
+import os
+
+CONFIG_FILE = "/data/config.json"
+
+def load_config():
+    if os.path.exists(CONFIG_FILE):
+        with open(CONFIG_FILE, "r") as f:
+            return SDRConfig(**json.load(f))
+    return SDRConfig()
+
+def save_config(config: SDRConfig):
+    with open(CONFIG_FILE, "w") as f:
+        json.dump(config.model_dump(), f)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -45,3 +60,13 @@ async def websocket_endpoint(websocket: WebSocket):
             await websocket.receive_text()
     except WebSocketDisconnect:
         manager.disconnect(websocket)
+
+@app.get("/config", response_model=SDRConfig)
+async def get_config():
+    return load_config()
+
+@app.post("/config", response_model=SDRConfig)
+async def update_config(config: SDRConfig):
+    save_config(config)
+    # In a real app, we might signal the sdr-dsp container here
+    return config
