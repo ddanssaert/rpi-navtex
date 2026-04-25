@@ -14,13 +14,19 @@
 
 static IqQueue* g_queue = nullptr;
 static std::atomic<bool> g_running{true};
+static std::atomic<double> g_energy_sum{0.0};
+static std::atomic<long> g_energy_count{0};
 
 static void stream_callback(short* xi, short* xq,
                             sdrplay_api_StreamCbParamsT* /*params*/,
                             unsigned int num_samples, unsigned int /*reset*/,
                             void* /*ctx*/) {
-    for (unsigned int i = 0; i < num_samples; i++)
+    for (unsigned int i = 0; i < num_samples; i++) {
         g_queue->push(xi[i], xq[i]);
+        // Simple energy estimation: I^2 + Q^2
+        g_energy_sum = g_energy_sum + (double)xi[i]*xi[i] + (double)xq[i]*xq[i];
+        g_energy_count++;
+    }
 }
 
 static void consumer_thread() {
@@ -98,9 +104,8 @@ int main() {
     }
 
     // Configure RF frequency and sample rate
-    // IMPORTANT: fsHz must be > 2MHz for RSP devices. 
-    // We set base rate = output_rate * decimation_factor.
-    params->devParams->fsFreq.fsHz = CFG_IN_SAMPLE_RATE() * CFG_H_DECIMATION();
+    // WE USE THE STANDARD 2.048 MHz BASE RATE
+    params->devParams->fsFreq.fsHz = 2048000.0;
     params->rxChannelA->tunerParams.rfFreq.rfHz = (double)CFG_FREQ_TUNER() * 1000.0;
     params->rxChannelA->tunerParams.gain.LNAstate = CFG_LNA_STATE();
 
@@ -139,7 +144,18 @@ int main() {
 
     // Run until interrupted
     std::signal(SIGINT, [](int){ g_running = false; });
-    while (g_running) std::this_thread::sleep_for(std::chrono::seconds(1));
+    
+    int log_divider = 0;
+    while (g_running) {
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        if (++log_divider >= 5) {
+            double avg = g_energy_count > 0 ? std::sqrt(g_energy_sum / g_energy_count) : 0;
+            printf("sdr-dsp: avg signal level: %.1f\n", avg); fflush(stdout);
+            g_energy_sum = 0;
+            g_energy_count = 0;
+            log_divider = 0;
+        }
+    }
 
     printf("sdr-dsp: shutting down...\n"); fflush(stdout);
     queue.close();

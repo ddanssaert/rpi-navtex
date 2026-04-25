@@ -12,11 +12,11 @@ private:
     BitCallback on_bit_;
 
     // Constants (formerly magic numbers in decoder.h)
-    static constexpr int SAMPLES_TO_BURN = 2;
-    static constexpr int SAMPLES_TO_USE  = 5;
-    static constexpr int SAMPLE_RATE     = 900;
+    static constexpr int SAMPLES_TO_BURN = 20;
+    static constexpr int SAMPLES_TO_USE  = 40;
+    static constexpr int SAMPLE_RATE     = 8000;
     static constexpr int NAVTEX_FSK_SHIFT= 85;
-    static constexpr int SAMPLES_PER_BIT = 9;
+    static constexpr int SAMPLES_PER_BIT = 80;
     static constexpr int CORR_BUF_NUMBITS = 63;
     static constexpr int CORR_BUF_SIZE   = CORR_BUF_NUMBITS * SAMPLES_PER_BIT;
 
@@ -37,7 +37,7 @@ private:
     int dab_idx_ = 0, cb_idx_ = 0, csa_idx_ = 0;
     bool dab_primed_ = false, cb_primed_ = false, csa_primed_ = false;
     int prev_offset_ = -1;
-    const int corr_mask_[SAMPLES_PER_BIT] = {0,1,1,1,0,-1,-1,-1,0};
+    double corr_mask_[SAMPLES_PER_BIT]{};
 
     void bs_decoded_sample_in(double ds);
     void bd_decoded_sample_in(double ds, double I, double Q);

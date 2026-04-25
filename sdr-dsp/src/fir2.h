@@ -20,11 +20,11 @@ private:
 
     // Filter parameters (from reference fir2cpp.C)
     static constexpr int FILTER_SIZE = 47;
-    static constexpr int DECIMATION_FACTOR = 7;
+    static constexpr int DECIMATION_FACTOR = 8;
     static constexpr int BUF_SIZE = 1024;
-    static constexpr int FS_IN = 63000;
+    static constexpr int FS_IN = 64000;
     static constexpr int FREQ_SHIFT = 14000;
-    static constexpr int FS_FILTER_SIZE = 9;  // FS_IN/FREQ_SHIFT = 4.5 → 9 elements
+    static constexpr int FS_FILTER_SIZE = 32;  // FS_IN / GCD(FS_IN, FREQ_SHIFT) = 64000 / 2000 = 32
 
     static const double filter_h_[FILTER_SIZE];
 

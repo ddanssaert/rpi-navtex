@@ -10,6 +10,15 @@ Decoder::Decoder(BitCallback on_bit)
         bit_filterR_[i] = std::cos(angle);
         bit_filterI_[i] = std::sin(angle);
     }
+
+    // Generate square-wave correlation mask for bit synchronization
+    // Standard SITOR-B sync pattern (Mark/Space transitions)
+    for (int i = 0; i < SAMPLES_PER_BIT; i++) {
+        if (i < SAMPLES_PER_BIT / 10) corr_mask_[i] = 0;
+        else if (i < SAMPLES_PER_BIT / 2) corr_mask_[i] = 1.0;
+        else if (i < 9 * SAMPLES_PER_BIT / 10) corr_mask_[i] = -1.0;
+        else corr_mask_[i] = 0;
+    }
 }
 
 void Decoder::sample_in(double I, double Q) {

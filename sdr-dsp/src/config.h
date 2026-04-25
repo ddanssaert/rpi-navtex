@@ -6,7 +6,7 @@
 inline int    CFG_FREQ_TUNER()  { return 504000; }   // (490+518)/2 kHz
 inline int    CFG_FREQ_UPPER()  { return 518000; }
 inline int    CFG_FREQ_LOWER()  { return 490000; }
-inline double CFG_IN_SAMPLE_RATE() { return 252000.0; }
+inline double CFG_IN_SAMPLE_RATE() { return 256000.0; }
 inline int    CFG_H_DECIMATION()   { return 8; }     // hardware decimation
 inline int    CFG_SW_DECIMATION()  { return 4; }     // software FIR1 decimation
 
