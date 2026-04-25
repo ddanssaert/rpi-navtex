@@ -11,7 +11,7 @@ A highly robust, headless distribution image for the Raspberry Pi 3B designed to
 
 ## 2. SDR Interface & Backend Data Flow
 - **Hardware Configuration:** The SDRPlay RSPDX USB device is passed directly to the `sdr-dsp` container. Hardware tuning parameters (e.g., Antenna selection, LNA Gain, AGC settings) are configurable via endpoints routed from the UI settings tab.
-- **Demodulation Pipeline:** Built on `bartelvdh`'s C++ DSP core, it applies bespoke FIR filters and parses the continuous RF sequence into structured Navtex object blocks.
+- **Demodulation Pipeline & C++ Refactoring:** Utilizes the accurate DSP math (FIR filters, phase extraction) from `bartelvdh`'s reference implementation. However, the original C++ wrapper will be heavily refactored for enterprise stability: busy-wait thread polling (`usleep` loops) will be replaced with proper Condition Variables, and all hardcoded magic numbers (frequencies, decimation, gain states) will be stripped out and fed dynamically from the Settings UI.
 - **Broker & Persistence:** The decoded blocks bypass static interval polling and feed directly into a modern backend broker (Node.js/Python). The broker instantly:
   - Writes to SQLite (mounted via a persistent Docker Volume).
   - Broadcasts precisely to all active web clients over WebSockets.

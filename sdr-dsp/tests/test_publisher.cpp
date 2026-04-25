@@ -49,8 +49,11 @@ int main() {
     std::string received(buf);
     // Verify it's a POST with JSON content
     assert(received.find("POST /messages") != std::string::npos);
-    assert(received.find("\"bbbb\":\"OB01\"") != std::string::npos);
-    assert(received.find("\"freq\":518000") != std::string::npos);
+    assert(received.find("\"station_id\":\"O\"") != std::string::npos);
+    assert(received.find("\"message_type\":\"B\"") != std::string::npos);
+    assert(received.find("\"serial_id\":1") != std::string::npos);
+    assert(received.find("\"content\":") != std::string::npos);
+    assert(received.find("\"raw_data\":") != std::string::npos);
     printf("test_publisher PASS\n");
     return 0;
 }

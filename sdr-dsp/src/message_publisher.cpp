@@ -42,11 +42,28 @@ void MessagePublisher::publish(const std::string& bbbb,
     char ts[25];
     std::strftime(ts, sizeof(ts), "%Y-%m-%dT%H:%M:%SZ", std::gmtime(&now));
 
+    // Parse Navtex designator (B1B2B3B4)
+    std::string station_id = "";
+    std::string message_type = "";
+    int serial_id = 0;
+    if (bbbb.size() >= 2) {
+        station_id += bbbb[0];
+        message_type += bbbb[1];
+    }
+    if (bbbb.size() >= 4) {
+        try {
+            serial_id = std::stoi(bbbb.substr(2, 2));
+        } catch (...) {
+            // keep 0
+        }
+    }
+
     nlohmann::json j;
-    j["bbbb"]    = bbbb;
-    j["message"] = message;
-    j["freq"]    = freq;
-    j["ts"]      = ts;
+    j["station_id"]   = station_id;
+    j["message_type"] = message_type;
+    j["serial_id"]    = serial_id;
+    j["content"]      = message;
+    j["raw_data"]     = "ZCZC " + bbbb + "\n" + message + "\nNNNN";
     std::string payload = j.dump();
 
     std::string host, path;

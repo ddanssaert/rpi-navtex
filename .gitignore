@@ -1,1 +1,8 @@
 .worktrees/
+*.pyc
+__pycache__/
+navtex.db
+sdr-dsp/tests/test_publisher
+frontend/node_modules/
+frontend/dist/
+*.metadata.json
