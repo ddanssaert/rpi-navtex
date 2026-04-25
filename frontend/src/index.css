@@ -89,6 +89,10 @@ body {
   display: flex;
 }
 
+.flex-wrap {
+  flex-wrap: wrap;
+}
+
 .justify-between {
   justify-content: space-between;
 }
@@ -101,6 +105,10 @@ body {
   align-items: center;
 }
 
+.gap-2 {
+  gap: 0.5rem;
+}
+
 .mb-2 {
   margin-bottom: 0.5rem;
 }
@@ -109,8 +117,17 @@ body {
   margin-bottom: 1rem;
 }
 
+.mb-6 {
+  margin-bottom: 1.5rem;
+}
+
 .ml-2 {
   margin-left: 0.5rem;
+}
+
+.py-10 {
+  padding-top: 2.5rem;
+  padding-bottom: 2.5rem;
 }
 
 .text-sm {
@@ -119,6 +136,10 @@ body {
 
 .text-xs {
   font-size: 0.75rem;
+}
+
+.text-center {
+  text-align: center;
 }
 
 .text-secondary {
@@ -145,6 +166,18 @@ body {
   white-space: pre-wrap;
 }
 
+.overflow-hidden {
+  overflow: hidden;
+}
+
+.uppercase {
+  text-transform: uppercase;
+}
+
+.tracking-wider {
+  letter-spacing: 0.05em;
+}
+
 .station-badge {
   background: #112240;
   color: var(--accent-color);
@@ -159,5 +192,28 @@ body {
   color: #000;
   padding: 0.2rem 0.6rem;
   border-radius: 20px;
+  font-weight: 600;
+}
+
+.filter-chip {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  color: var(--text-secondary);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-chip:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--text-secondary);
+}
+
+.filter-chip.active {
+  background: var(--accent-color);
+  color: var(--primary-bg);
+  border-color: var(--accent-color);
   font-weight: 600;
 }

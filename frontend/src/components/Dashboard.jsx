@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
 import MessageCard from './MessageCard';
+import FilterBar from './FilterBar';
+import useFilters from '../hooks/useFilters';
 import { createWebSocket } from '../api/websocket';
 
 const Dashboard = () => {
     const [messages, setMessages] = useState([]);
     const [isOnline, setIsOnline] = useState(false);
+    const { filters, toggleStation, toggleType, isFiltered } = useFilters();
 
     useEffect(() => {
         // Load history
@@ -26,6 +29,8 @@ const Dashboard = () => {
         return cleanup;
     }, []);
 
+    const filteredMessages = messages.filter(isFiltered);
+
     return (
         <div className="dashboard-container">
             <header className="header">
@@ -36,13 +41,19 @@ const Dashboard = () => {
                 </div>
             </header>
 
+            <FilterBar
+                filters={filters}
+                toggleStation={toggleStation}
+                toggleType={toggleType}
+            />
+
             <main>
-                {messages.length === 0 ? (
+                {filteredMessages.length === 0 ? (
                     <div className="text-secondary text-center py-10">
-                        Waiting for messages...
+                        {messages.length === 0 ? 'Waiting for messages...' : 'No messages match your filters.'}
                     </div>
                 ) : (
-                    messages.map(msg => (
+                    filteredMessages.map(msg => (
                         <MessageCard key={msg.id} message={msg} />
                     ))
                 )}
