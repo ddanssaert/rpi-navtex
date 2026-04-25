@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  sdr-dsp:
+    image: alpine:latest # Placeholder for the sdr-dsp image
+    container_name: sdr-dsp
+    networks:
+      - navtex_net
+    volumes:
+      - sqlite_data:/data
+    # privileged: true # Likely needed for SDRPlay USB device access
+    
+  api-broker:
+    build: 
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: api-broker
+    networks:
+      - navtex_net
+    volumes:
+      - sqlite_data:/data
+    ports:
+      - "8000:8000"
+
+  pwa-frontend:
+    image: nginx:alpine # Placeholder for pwa frontend
+    container_name: pwa-frontend
+    networks:
+      - navtex_net
+    ports:
+      - "80:80"
+    
+networks:
+  navtex_net:
+    driver: bridge
+
+volumes:
+  sqlite_data:
