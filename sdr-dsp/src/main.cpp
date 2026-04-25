@@ -16,6 +16,7 @@ static IqQueue* g_queue = nullptr;
 static std::atomic<bool> g_running{true};
 static std::atomic<double> g_energy_sum{0.0};
 static std::atomic<long> g_energy_count{0};
+static std::atomic<short> g_last_xi{0}, g_last_xq{0};
 
 static void stream_callback(short* xi, short* xq,
                             sdrplay_api_StreamCbParamsT* /*params*/,
@@ -26,6 +27,10 @@ static void stream_callback(short* xi, short* xq,
         // Simple energy estimation: I^2 + Q^2
         g_energy_sum = g_energy_sum + (double)xi[i]*xi[i] + (double)xq[i]*xq[i];
         g_energy_count++;
+        if (i == 0) {
+            g_last_xi = xi[0];
+            g_last_xq = xq[0];
+        }
     }
 }
 
@@ -114,11 +119,14 @@ int main() {
     params->rxChannelA->ctrlParams.decimation.decimationFactor= (unsigned char)CFG_H_DECIMATION();
 
     // Antenna selection (A/B/HiZ — mapped from env CFG_ANTENNA)
-    switch (CFG_ANTENNA()) {
+    char ant = CFG_ANTENNA();
+    printf("sdr-dsp: configuring antenna %c (LNA state: %d)...\n", ant, CFG_LNA_STATE());
+    switch (ant) {
         case 'B': params->devParams->rspDxParams.antennaSel = sdrplay_api_RspDx_ANTENNA_B; break;
         case 'C': params->devParams->rspDxParams.antennaSel = sdrplay_api_RspDx_ANTENNA_C; break;
         default:  params->devParams->rspDxParams.antennaSel = sdrplay_api_RspDx_ANTENNA_A; break;
     }
+    fflush(stdout);
 
     sdrplay_api_CallbackFnsT cbs{};
     cbs.StreamACbFn = stream_callback;
@@ -145,12 +153,16 @@ int main() {
     // Run until interrupted
     std::signal(SIGINT, [](int){ g_running = false; });
     
+    static short last_xi = 0, last_xq = 0;
     int log_divider = 0;
     while (g_running) {
         std::this_thread::sleep_for(std::chrono::seconds(1));
         if (++log_divider >= 5) {
             double avg = g_energy_count > 0 ? std::sqrt(g_energy_sum / g_energy_count) : 0;
-            printf("sdr-dsp: avg signal level: %.1f\n", avg); fflush(stdout);
+            printf("sdr-dsp: avg signal level: %.1f (samples processed: %ld)\n", avg, (long)g_energy_count);
+            // Check if the signal is varying (crude check)
+            printf("sdr-dsp: raw sample check: xi=%d, xq=%d\n", (int)g_last_xi, (int)g_last_xq);
+            fflush(stdout);
             g_energy_sum = 0;
             g_energy_count = 0;
             log_divider = 0;
