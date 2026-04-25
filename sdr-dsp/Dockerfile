@@ -13,12 +13,20 @@ RUN chmod +x /tmp/sdrplay_install.run \
     && cp /tmp/sdrplay/inc/* /usr/local/include/ \
     && arch=$(uname -m) \
     && case "$arch" in \
-    x86_64)  sdr_arch="x86_64" ;; \
-    aarch64) sdr_arch="arm64" ;; \
-    armv7l)  sdr_arch="armhf" ;; \
-    *)       sdr_arch="x86_64" ;; \
+    x86_64)  search="x86_64 x64 amd64" ;; \
+    aarch64) search="arm64 aarch64" ;; \
+    armv7l)  search="armhf armv7l" ;; \
+    *)       search="$arch" ;; \
     esac \
-    && cp /tmp/sdrplay/$sdr_arch/libsdrplay_api.so* /usr/local/lib/ \
+    && for dir in $search; do \
+    if [ -d "/tmp/sdrplay/$dir" ]; then \
+    cp /tmp/sdrplay/$dir/libsdrplay_api.so* /usr/local/lib/; \
+    found=1; break; \
+    fi; \
+    done \
+    && if [ -z "$found" ]; then \
+    echo "Could not find SDRPlay libs for $arch in: $(ls /tmp/sdrplay)"; exit 1; \
+    fi \
     && ldconfig \
     && rm -rf /tmp/sdrplay*
 
