@@ -28,6 +28,7 @@ RUN chmod +x /tmp/sdrplay_install.run \
     echo "Could not find SDRPlay libs for $arch in: $(ls /tmp/sdrplay)"; exit 1; \
     fi \
     && ldconfig \
+    && ln -s /usr/local/lib/libsdrplay_api.so.3 /usr/local/lib/libsdrplay_api.so \
     && rm -rf /tmp/sdrplay*
 
 WORKDIR /build

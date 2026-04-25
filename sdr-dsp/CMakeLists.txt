@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 project(navtex_sdr_dsp CXX)
 set(CMAKE_CXX_STANDARD 17)
 
-find_library(SDRPLAY_LIB sdrplay_api REQUIRED)
+find_library(SDRPLAY_LIB sdrplay_api HINTS /usr/local/lib REQUIRED)
 
 add_executable(sdr-dsp
     src/main.cpp
