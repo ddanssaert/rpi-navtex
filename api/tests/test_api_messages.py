@@ -20,3 +20,10 @@ async def test_post_message():
         response = await ac.post("/messages", json=data)
     assert response.status_code == 201
     assert response.json()["station_id"] == "A"
+
+@pytest.mark.asyncio
+async def test_get_messages():
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        response = await ac.get("/messages")
+    assert response.status_code == 200
+    assert isinstance(response.json(), list)

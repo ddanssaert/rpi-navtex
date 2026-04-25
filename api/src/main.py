@@ -25,3 +25,9 @@ async def create_message(message: MessageCreate, db: AsyncSession = Depends(get_
     await db.commit()
     await db.refresh(db_message)
     return db_message
+
+@app.get("/messages", response_model=list[MessageRead])
+async def get_messages(db: AsyncSession = Depends(get_db)):
+    from sqlalchemy.future import select
+    result = await db.execute(select(Message).order_by(Message.timestamp.desc()))
+    return result.scalars().all()
