@@ -58,17 +58,46 @@ int main() {
 
     std::thread consumer(consumer_thread);
 
-    // SDRPlay API init — see reference/backend/receiver/capt_sched.c for full
-    // error handling and device enumeration. Abbreviated here for clarity.
-    sdrplay_api_Open();
-
-    sdrplay_api_DeviceT device{};
-    unsigned int num_devices = 0;
-    sdrplay_api_GetDevices(&device, &num_devices, 1);
-    sdrplay_api_SelectDevice(&device);
-
+    sdrplay_api_ErrT err;
+    sdrplay_api_DeviceT devs[6];
+    unsigned int numDevs = 0;
     sdrplay_api_DeviceParamsT* params = nullptr;
-    sdrplay_api_GetDeviceParams(device.dev, &params);
+
+    // Initialize API
+    printf("sdr-dsp: checking SDRPlay API service...\n"); fflush(stdout);
+    if ((err = sdrplay_api_Open()) != sdrplay_api_Success) {
+        fprintf(stderr, "sdrplay_api_Open error: %s\n", sdrplay_api_GetErrorString(err));
+        return 1;
+    }
+    printf("sdr-dsp: API opened.\n"); fflush(stdout);
+
+    // Get device list
+    printf("sdr-dsp: enumerating devices...\n"); fflush(stdout);
+    if ((err = sdrplay_api_GetDevices(devs, &numDevs, 6)) != sdrplay_api_Success) {
+        fprintf(stderr, "sdrplay_api_GetDevices error: %s\n", sdrplay_api_GetErrorString(err));
+        return 1;
+    }
+    printf("sdr-dsp: found %u device(s).\n", numDevs); fflush(stdout);
+
+    if (numDevs == 0) {
+        fprintf(stderr, "Error: No SDRPlay devices found.\n");
+        return 1;
+    }
+
+    // Select the first device
+    sdrplay_api_DeviceT chosenDev = devs[0];
+    printf("sdr-dsp: selecting device %s...\n", chosenDev.SerNo); fflush(stdout);
+    if ((err = sdrplay_api_SelectDevice(&chosenDev)) != sdrplay_api_Success) {
+        fprintf(stderr, "sdrplay_api_SelectDevice error: %s\n", sdrplay_api_GetErrorString(err));
+        return 1;
+    }
+
+    // Get device parameters
+    printf("sdr-dsp: fetching parameters...\n"); fflush(stdout);
+    if ((err = sdrplay_api_GetDeviceParams(chosenDev.dev, &params)) != sdrplay_api_Success) {
+        fprintf(stderr, "sdrplay_api_GetDeviceParams error: %s\n", sdrplay_api_GetErrorString(err));
+        return 1;
+    }
 
     // Configure RF frequency and sample rate
     params->devParams->fsFreq.fsHz = CFG_IN_SAMPLE_RATE();
@@ -88,19 +117,25 @@ int main() {
 
     sdrplay_api_CallbackFnsT cbs{};
     cbs.StreamACbFn = stream_callback;
-    sdrplay_api_Init(device.dev, &cbs, nullptr);
+
+    printf("sdr-dsp: initializing hardware...\n"); fflush(stdout);
+    if ((err = sdrplay_api_Init(chosenDev.dev, &cbs, nullptr)) != sdrplay_api_Success) {
+        fprintf(stderr, "sdrplay_api_Init error: %s\n", sdrplay_api_GetErrorString(err));
+        return 1;
+    }
 
     printf("sdr-dsp: streaming started (%.0f kHz → fir1 → fir2 → decoder → nav_b_sm → broker)\n",
            CFG_IN_SAMPLE_RATE() / 1000.0);
+    fflush(stdout);
 
     // Run until interrupted
     std::signal(SIGINT, [](int){ g_running = false; });
     while (g_running) std::this_thread::sleep_for(std::chrono::seconds(1));
 
-    printf("sdr-dsp: shutting down...\n");
+    printf("sdr-dsp: shutting down...\n"); fflush(stdout);
     queue.close();
     consumer.join();
-    sdrplay_api_Uninit(device.dev);
+    sdrplay_api_Uninit(chosenDev.dev);
     sdrplay_api_Close();
     return 0;
 }
