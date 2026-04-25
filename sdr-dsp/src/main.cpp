@@ -81,9 +81,9 @@ int main() {
 
     // Antenna selection (A/B/HiZ — mapped from env CFG_ANTENNA)
     switch (CFG_ANTENNA()) {
-        case 'B': params->rxChannelA->tunerParams.rfFreq.nodeNum = sdrplay_api_RspDx_ANTENNA_B; break;
-        case 'C': params->rxChannelA->tunerParams.rfFreq.nodeNum = sdrplay_api_RspDx_ANTENNA_C; break;
-        default:  params->rxChannelA->tunerParams.rfFreq.nodeNum = sdrplay_api_RspDx_ANTENNA_A; break;
+        case 'B': params->devParams->rspDxParams.antennaSel = sdrplay_api_RspDx_ANTENNA_B; break;
+        case 'C': params->devParams->rspDxParams.antennaSel = sdrplay_api_RspDx_ANTENNA_C; break;
+        default:  params->devParams->rspDxParams.antennaSel = sdrplay_api_RspDx_ANTENNA_A; break;
     }
 
     sdrplay_api_CallbackFnsT cbs{};
