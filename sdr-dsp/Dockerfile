@@ -21,6 +21,9 @@ RUN chmod +x /tmp/sdrplay_install.run \
     && for dir in $search; do \
     if [ -d "/tmp/sdrplay/$dir" ]; then \
     cp /tmp/sdrplay/$dir/libsdrplay_api.so* /usr/local/lib/; \
+    if [ -f "/tmp/sdrplay/$dir/sdrplay_apiService" ]; then \
+    cp "/tmp/sdrplay/$dir/sdrplay_apiService" /usr/local/bin/; \
+    fi; \
     found=1; break; \
     fi; \
     done \
@@ -37,6 +40,9 @@ RUN cmake -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build -j$(nproc)
 
 FROM debian:bookworm-slim
 COPY --from=build /usr/local/lib/libsdrplay_api.so* /usr/local/lib/
+COPY --from=build /usr/local/bin/sdrplay_apiService /usr/local/bin/sdrplay_apiService
 RUN ldconfig
 COPY --from=build /build/build/sdr-dsp /usr/local/bin/sdr-dsp
-ENTRYPOINT ["/usr/local/bin/sdr-dsp"]
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
