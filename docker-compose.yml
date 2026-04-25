@@ -34,12 +34,16 @@ services:
       - "8000:8000"
 
   pwa-frontend:
-    image: nginx:alpine # Placeholder for pwa frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
     container_name: pwa-frontend
     networks:
       - navtex_net
     ports:
       - "80:80"
+    depends_on:
+      - api-broker
     
 networks:
   navtex_net:
