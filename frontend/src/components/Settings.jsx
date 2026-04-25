@@ -4,6 +4,7 @@ const Settings = () => {
     const [config, setConfig] = useState({ antenna: 'A', lna_gain: 0 });
     const [saving, setSaving] = useState(false);
     const [msg, setMsg] = useState('');
+    const [notifStatus, setNotifStatus] = useState(Notification.permission);
 
     const apiHost = window.location.hostname === 'localhost' ? 'localhost:8000' : window.location.host;
     const protocol = window.location.protocol;
@@ -29,6 +30,12 @@ const Settings = () => {
             })
             .catch(err => setMsg('Error saving settings'))
             .finally(() => setSaving(false));
+    };
+
+    const requestNotifications = () => {
+        Notification.requestPermission().then(permission => {
+            setNotifStatus(permission);
+        });
     };
 
     return (
@@ -69,7 +76,7 @@ const Settings = () => {
             <button
                 onClick={handleSave}
                 disabled={saving}
-                className="save-button w-full"
+                className="save-button w-full mb-6"
             >
                 {saving ? 'Saving...' : 'Apply Configuration'}
             </button>
@@ -78,7 +85,20 @@ const Settings = () => {
 
             <hr className="my-6 border-glass-border" />
 
-            <h2 className="mb-4">System</h2>
+            <h2 className="mb-4">Client Experience</h2>
+
+            <div className="mb-4">
+                <label className="block text-secondary text-xs uppercase mb-1">Push Notifications</label>
+                <button
+                    onClick={requestNotifications}
+                    disabled={notifStatus === 'granted'}
+                    className={`w-full p-3 rounded text-sm transition ${notifStatus === 'granted' ? 'bg-accent-color/20 text-accent-color' : 'bg-black/40 border border-glass-border hover:bg-black/60'}`}
+                >
+                    {notifStatus === 'granted' ? '✓ Notifications Enabled' : 'Enable Push Notifications'}
+                </button>
+            </div>
+
+            <h2 className="mb-4 mt-6">System</h2>
             <button className="bg-black/40 border border-glass-border p-3 rounded w-full text-sm hover:bg-black/60 transition">
                 Check for Software Updates
             </button>

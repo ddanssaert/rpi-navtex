@@ -20,3 +20,27 @@ self.addEventListener('fetch', (event) => {
         })
     );
 });
+
+self.addEventListener('push', (event) => {
+    const data = event.data ? event.data.json() : { title: 'New NAVTEX Message', body: 'Check your dashboard.' };
+
+    const options = {
+        body: data.content || data.body,
+        icon: '/icon-192.png',
+        badge: '/favicon.svg',
+        data: {
+            url: '/'
+        }
+    };
+
+    event.waitUntil(
+        self.registration.showNotification(data.station_id + data.message_type + ': ' + data.title || 'NAVTEX Alert', options)
+    );
+});
+
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+    event.waitUntil(
+        clients.openWindow(event.notification.data.url)
+    );
+});
