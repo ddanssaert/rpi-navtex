@@ -52,12 +52,6 @@ static void consumer_thread() {
 }
 
 int main() {
-    // 8 seconds of IQ buffer at 252kHz input sample rate
-    IqQueue queue((size_t)(CFG_IN_SAMPLE_RATE() * 8));
-    g_queue = &queue;
-
-    std::thread consumer(consumer_thread);
-
     sdrplay_api_ErrT err;
     sdrplay_api_DeviceT devs[6];
     unsigned int numDevs = 0;
@@ -75,12 +69,14 @@ int main() {
     printf("sdr-dsp: enumerating devices...\n"); fflush(stdout);
     if ((err = sdrplay_api_GetDevices(devs, &numDevs, 6)) != sdrplay_api_Success) {
         fprintf(stderr, "sdrplay_api_GetDevices error: %s\n", sdrplay_api_GetErrorString(err));
+        sdrplay_api_Close();
         return 1;
     }
     printf("sdr-dsp: found %u device(s).\n", numDevs); fflush(stdout);
 
     if (numDevs == 0) {
         fprintf(stderr, "Error: No SDRPlay devices found.\n");
+        sdrplay_api_Close();
         return 1;
     }
 
@@ -89,6 +85,7 @@ int main() {
     printf("sdr-dsp: selecting device %s...\n", chosenDev.SerNo); fflush(stdout);
     if ((err = sdrplay_api_SelectDevice(&chosenDev)) != sdrplay_api_Success) {
         fprintf(stderr, "sdrplay_api_SelectDevice error: %s\n", sdrplay_api_GetErrorString(err));
+        sdrplay_api_Close();
         return 1;
     }
 
@@ -96,11 +93,14 @@ int main() {
     printf("sdr-dsp: fetching parameters...\n"); fflush(stdout);
     if ((err = sdrplay_api_GetDeviceParams(chosenDev.dev, &params)) != sdrplay_api_Success) {
         fprintf(stderr, "sdrplay_api_GetDeviceParams error: %s\n", sdrplay_api_GetErrorString(err));
+        sdrplay_api_Close();
         return 1;
     }
 
     // Configure RF frequency and sample rate
-    params->devParams->fsFreq.fsHz = CFG_IN_SAMPLE_RATE();
+    // IMPORTANT: fsHz must be > 2MHz for RSP devices. 
+    // We set base rate = output_rate * decimation_factor.
+    params->devParams->fsFreq.fsHz = CFG_IN_SAMPLE_RATE() * CFG_H_DECIMATION();
     params->rxChannelA->tunerParams.rfFreq.rfHz = (double)CFG_FREQ_TUNER() * 1000.0;
     params->rxChannelA->tunerParams.gain.LNAstate = CFG_LNA_STATE();
 
@@ -118,11 +118,20 @@ int main() {
     sdrplay_api_CallbackFnsT cbs{};
     cbs.StreamACbFn = stream_callback;
 
-    printf("sdr-dsp: initializing hardware...\n"); fflush(stdout);
+    printf("sdr-dsp: initializing hardware (Base: %.2f MHz, Decim: %d)...\n", 
+           params->devParams->fsFreq.fsHz / 1e6, CFG_H_DECIMATION()); fflush(stdout);
     if ((err = sdrplay_api_Init(chosenDev.dev, &cbs, nullptr)) != sdrplay_api_Success) {
         fprintf(stderr, "sdrplay_api_Init error: %s\n", sdrplay_api_GetErrorString(err));
+        sdrplay_api_Close();
         return 1;
     }
+
+    // Initialize IQ Queue (8 seconds buffer)
+    IqQueue queue((size_t)(CFG_IN_SAMPLE_RATE() * 8));
+    g_queue = &queue;
+
+    // Start consumer thread ONLY after hardware is ready
+    std::thread consumer(consumer_thread);
 
     printf("sdr-dsp: streaming started (%.0f kHz → fir1 → fir2 → decoder → nav_b_sm → broker)\n",
            CFG_IN_SAMPLE_RATE() / 1000.0);
