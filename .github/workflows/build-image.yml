@@ -62,22 +62,27 @@ jobs:
           TIMEZONE_DEFAULT: Europe/London
           STAGE_LIST: "stage0 stage1 stage2 ./stage-navtex"
           PUBKEY_ONLY_SSH: 1
+          BASE_IMAGE: debian:bookworm
         run: |
-          # 1. Install host dependencies
+          # 1. Register QEMU binfmt handlers for cross-architecture builds
+          docker run --privileged --rm tonistiigi/binfmt --install all
+
+          # 2. Install host dependencies
           sudo apt-get update
           sudo apt-get install -y coreutils quilt parted debootstrap zerofree zip \
                                 dosfstools libarchive-tools libcap2-bin grep rsync \
                                 xz-utils curl xxd file bc gpg pigz arch-test \
-                                qemu-user-static binfmt-support
+                                qemu-user-static qemu-user-binfmt binfmt-support
 
-          # 2. Clone pi-gen (master branch for Bookworm support)
+          # 3. Clone pi-gen (master branch for Bookworm support)
           git clone --depth 1 --branch master https://github.com/RPi-Distro/pi-gen.git /tmp/pi-gen
           
-          # 3. Prepare our custom stage and config
+          # 4. Prepare our custom stage and config
           cp image/config /tmp/pi-gen/config
           ln -sfn "$GITHUB_WORKSPACE/image/stage-navtex" /tmp/pi-gen/stage-navtex
           
-          # 4. Run build-docker.sh
+          # 5. Run build-docker.sh
+          # We pass BASE_IMAGE as an env var to ensure build-docker.sh uses it.
           cd /tmp/pi-gen
           ./build-docker.sh
 
