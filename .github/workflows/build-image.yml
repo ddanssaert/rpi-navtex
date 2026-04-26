@@ -138,7 +138,7 @@ jobs:
                                 qemu-user qemu-user-static binfmt-support jq
 
           BUILD_DIR="$GITHUB_WORKSPACE/pi-gen-build"
-          git clone --depth 1 --branch master https://github.com/RPi-Distro/pi-gen.git "$BUILD_DIR"
+          git clone --depth 1 --branch 2025-11-24-raspios-bookworm-arm64 https://github.com/RPi-Distro/pi-gen.git "$BUILD_DIR"
           
           cp image/config "$BUILD_DIR/config"
           cp -r image/stage-navtex "$BUILD_DIR/stage-navtex"
