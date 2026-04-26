@@ -13,9 +13,7 @@ const Dashboard = () => {
 
     useEffect(() => {
         // Load history
-        const apiHost = window.location.hostname === 'localhost' ? 'localhost:8000' : window.location.host;
-        const protocol = window.location.protocol;
-        fetch(`${protocol}//${apiHost}/messages`)
+        fetch('/messages')
             .then(res => res.json())
             .then(data => setMessages(data))
             .catch(err => console.error('Error fetching history:', err));

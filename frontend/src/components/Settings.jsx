@@ -6,11 +6,8 @@ const Settings = () => {
     const [msg, setMsg] = useState('');
     const [notifStatus, setNotifStatus] = useState(Notification.permission);
 
-    const apiHost = window.location.hostname === 'localhost' ? 'localhost:8000' : window.location.host;
-    const protocol = window.location.protocol;
-
     useEffect(() => {
-        fetch(`${protocol}//${apiHost}/config`)
+        fetch('/config')
             .then(res => res.json())
             .then(data => setConfig(data))
             .catch(err => console.error('Error fetching config:', err));
@@ -18,7 +15,7 @@ const Settings = () => {
 
     const handleSave = () => {
         setSaving(true);
-        fetch(`${protocol}//${apiHost}/config`, {
+        fetch('/config', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(config)
