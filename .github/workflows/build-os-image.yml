@@ -1,88 +1,28 @@
-name: Build and Publish Navtex Appliance
+name: Build Navtex Appliance OS Image
 
 on:
-  push:
-    tags:
-      - 'v*'
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Manual tag (e.g. v0.0.1-dev)'
-        required: false
-        default: 'v0.0.1-dev'
+        description: 'Image Tag (e.g. v0.1.17)'
+        required: true
+        default: 'v0.1.17'
+  push:
+    paths:
+      - 'image/**'
+      - '.github/workflows/build-os-image.yml'
+    tags:
+      - 'v*'
 
 permissions:
   contents: write
-  packages: write
-
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME_PREFIX: ${{ github.repository }}
 
 jobs:
-  publish-images:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        service: [sdr-dsp, api, frontend]
-        include:
-          - service: sdr-dsp
-            context: ./sdr-dsp
-            image_suffix: sdr-dsp
-          - service: api
-            context: ./api
-            image_suffix: api-broker
-          - service: frontend
-            context: ./frontend
-            image_suffix: pwa-frontend
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log into registry ${{ env.REGISTRY }}
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Resolve tag
-        id: tag
-        run: |
-          if [ "${{ github.event_name }}" = "push" ]; then
-            echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
-          else
-            echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Extract Docker metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/${{ matrix.image_suffix }}
-          tags: |
-            type=raw,value=${{ steps.tag.outputs.tag }}
-            type=raw,value=latest
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: ${{ matrix.context }}
-          push: true
-          platforms: linux/amd64,linux/arm64
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
   build-appliance:
-    needs: publish-images
+    # We no longer "need" publish-images here because they are assumed 
+    # to be in GHCR. If a tag is pushed, both workflows start. 
+    # pi-gen takes ~40 mins, docker build takes ~5 mins. 
+    # The pull will succeed.
     runs-on: ubuntu-22.04
     timeout-minutes: 90
     steps:
@@ -92,7 +32,7 @@ jobs:
       - name: Resolve tag
         id: tag
         run: |
-          if [ "${{ github.event_name }}" = "push" ]; then
+          if [[ "${{ github.event_name }}" == "push" ]]; then
             echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
           else
             echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
@@ -194,7 +134,7 @@ jobs:
           chmod +x image/scripts/generate-manifest.sh
           bash ./image/scripts/generate-manifest.sh
 
-      - name: Upload artifacts (workflow run)
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: navtex-image-${{ steps.tag.outputs.tag }}
@@ -204,8 +144,8 @@ jobs:
             rpi-imager.json
           retention-days: 14
 
-      - name: Create GitHub Release and upload assets
-        if: github.event_name == 'push'
+      - name: Create GitHub Release
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.tag.outputs.tag }}
