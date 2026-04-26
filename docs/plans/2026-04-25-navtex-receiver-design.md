@@ -15,13 +15,16 @@ A highly robust, headless distribution image for the Raspberry Pi 3B designed to
 - **Broker & Persistence:** The decoded blocks bypass static interval polling and feed directly into a modern backend broker (Node.js/Python). The broker instantly:
   - Writes to SQLite (mounted via a persistent Docker Volume).
   - Broadcasts precisely to all active web clients over WebSockets.
+- **Dynamic Configuration:** The `sdr-dsp` pipeline monitors `/data/config.json` via inotify or polling. Hardware changes (Antenna, Gain) are applied at runtime without stream interruption.
 
 ## 3. Frontend PWA & Client Experience
 - **Progressive Delivery:** Delivered exclusively as a PWA (bypassing all proprietary App Stores).
 - **Modern Aesthetics:** The user interface will be meticulously designed utilizing Google Stitch to provide an ultra-modern, responsive sailing dashboard.
 - **Smart Push Notifications:** Employs the native Web Push API (iOS 16.4+ / Android) for true background Toast alerts. Users maintain strict control via **B1 (Station) and B2 (Message Type) Notification Filter rules**, ensuring they are only alerted to topics they care about.
 - **Settings Dashboard:** Comprehensive management including SDR antenna adjustments and one-click Docker software updates.
+- **System Diagnostics:** Dedicated "System" tab providing real-time log streaming from all containers and hardware performance telemetry (Signal level, CPU).
 
 ## 4. Future Extensibility
-- **SignalK Subsystem:** A specialized architectural module that pushes Navtex data conforming to the SignalK / NMEA 2000 standard directly to Garmin GPSMap or Victron Cerbo GX headunits.
+- **SignalK Subsystem:** A specialized architectural module that pushes Navtex data conforming to the SignalK / NMEA 2000 standard directly to Garmin GPSMap or Victron Cerbo GX headunits. Configuration for these outputs is managed globally on the server.
 - **MQTT Integration:** Standard IoT integration for smart-boat automations.
+- **Data Lifecycle:** Automated 30-day message retention policy to ensure storage stability on SD cards.
