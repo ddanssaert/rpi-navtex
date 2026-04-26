@@ -121,7 +121,7 @@ jobs:
             --env PUBKEY_ONLY_SSH \
             --env BASE_IMAGE \
             pi-gen-local \
-            bash -c "git config --global --add safe.directory /pi-gen && ./build.sh"
+            bash -c "git config --global --add safe.directory /pi-gen && mount binfmt_misc -t binfmt_misc /proc/sys/fs/binfmt_misc || true && ./build.sh"
 
       - name: Locate built image
         id: img
