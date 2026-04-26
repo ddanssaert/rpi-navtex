@@ -47,30 +47,45 @@ jobs:
                 --exclude='node_modules' --exclude='deploy' --exclude='work' \
                 ./ image/stage-navtex/03-stack/files/navtex-src/
 
-      - name: Build image with pi-gen
-        id: pigen
-        uses: usimd/pi-gen-action@v1
-        with:
-          image-name: navtex
-          pi-gen-version: master
-          release: bookworm
-          stage-list: stage0 stage1 stage2 ./image/stage-navtex
-          pi-gen-dir: /tmp/pi-gen
-          increase-runner-disk-size: true
-          enable-ssh: 1
-          locale: en_GB.UTF-8
-          keyboard-keymap: gb
-          keyboard-layout: "English (UK)"
-          timezone: Europe/London
-          hostname: navtex
-          username: navtex
-          compression: xz
-          compression-level: 6
+      - name: Build image with pi-gen (Manual)
+        env:
+          IMG_NAME: navtex
+          RELEASE: bookworm
+          DEPLOY_COMPRESSION: xz
+          COMPRESSION_LEVEL: 6
+          TARGET_HOSTNAME: navtex
+          FIRST_USER_NAME: navtex
+          ENABLE_SSH: 1
+          LOCALE_DEFAULT: en_GB.UTF-8
+          KEYBOARD_KEYMAP: gb
+          KEYBOARD_LAYOUT: "English (UK)"
+          TIMEZONE_DEFAULT: Europe/London
+          STAGE_LIST: "stage0 stage1 stage2 ./stage-navtex"
+          PUBKEY_ONLY_SSH: 1
+        run: |
+          # 1. Install host dependencies
+          sudo apt-get update
+          sudo apt-get install -y coreutils quilt parted debootstrap zerofree zip \
+                                dosfstools libarchive-tools libcap2-bin grep rsync \
+                                xz-utils curl xxd file bc gpg pigz arch-test \
+                                qemu-user-static binfmt-support
+
+          # 2. Clone pi-gen (master branch for Bookworm support)
+          git clone --depth 1 --branch master https://github.com/RPi-Distro/pi-gen.git /tmp/pi-gen
+          
+          # 3. Prepare our custom stage and config
+          cp image/config /tmp/pi-gen/config
+          ln -sfn "$GITHUB_WORKSPACE/image/stage-navtex" /tmp/pi-gen/stage-navtex
+          
+          # 4. Run build-docker.sh
+          cd /tmp/pi-gen
+          ./build-docker.sh
 
       - name: Locate built image
         id: img
         run: |
           set -euo pipefail
+          # pi-gen puts built images in deploy/
           IMG=$(find /tmp/pi-gen/deploy -name '*.img.xz' | head -n1)
           if [ -z "$IMG" ]; then
             echo "ERROR: no .img.xz produced under /tmp/pi-gen/deploy" >&2
