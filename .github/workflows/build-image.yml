@@ -52,7 +52,8 @@ jobs:
         uses: usimd/pi-gen-action@v1
         with:
           image-name: navtex
-          pi-gen-version: arm64
+          pi-gen-version: master
+          release: bookworm
           stage-list: stage0 stage1 stage2 ./image/stage-navtex
           pi-gen-dir: /tmp/pi-gen
           increase-runner-disk-size: true
