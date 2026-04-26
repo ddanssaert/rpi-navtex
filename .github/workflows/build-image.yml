@@ -64,7 +64,7 @@ jobs:
           PUBKEY_ONLY_SSH: 1
           BASE_IMAGE: debian:bookworm
         run: |
-          # 1. Register QEMU binfmt handlers for cross-architecture builds
+          # 1. Register QEMU binfmt handlers
           docker run --privileged --rm tonistiigi/binfmt --install all
 
           # 2. Install host dependencies
@@ -72,18 +72,22 @@ jobs:
           sudo apt-get install -y coreutils quilt parted debootstrap zerofree zip \
                                 dosfstools libarchive-tools libcap2-bin grep rsync \
                                 xz-utils curl xxd file bc gpg pigz arch-test \
-                                qemu-user-static binfmt-support
+                                qemu-user qemu-user-static binfmt-support
 
-          # 3. Clone pi-gen (master branch for Bookworm support)
+          # 3. Clone pi-gen
           git clone --depth 1 --branch master https://github.com/RPi-Distro/pi-gen.git /tmp/pi-gen
           
-          # 4. Prepare our custom stage and config
+          # 4. Prepare path and config
           cp image/config /tmp/pi-gen/config
           ln -sfn "$GITHUB_WORKSPACE/image/stage-navtex" /tmp/pi-gen/stage-navtex
           
-          # 5. Run build-docker.sh
-          # We pass BASE_IMAGE as an env var to ensure build-docker.sh uses it.
+          # 5. Patch pi-gen to force amd64 and Bookworm
+          # Some versions of pi-gen try to use i386 which fails on modern runners.
           cd /tmp/pi-gen
+          sed -i 's/--platform linux\/386//g' build-docker.sh
+          sed -i 's/debian:trixie/debian:bookworm/g' Dockerfile || true
+          
+          # 6. Run build-docker.sh
           ./build-docker.sh
 
       - name: Locate built image
