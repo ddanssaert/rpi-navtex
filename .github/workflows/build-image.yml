@@ -92,8 +92,8 @@ jobs:
           sed -i 's/trixie/bookworm/g' build-docker.sh
           sed -i 's/trixie/bookworm/g' Dockerfile
           
-          # Broad patch out for ANY qemu-user-binfmt check
-          sed -i 's/.*qemu-user-binfmt.*/true/g' build-docker.sh
+          # Broad patch out for ANY qemu-user-binfmt check in ANY script
+          find . -name "*.sh" -exec sed -i 's/.*qemu-user-binfmt.*/true/g' {} +
           
           # 6. Manual Docker Build & Run (Replacing build-docker.sh for better path control)
           # First build the pi-gen image
@@ -101,6 +101,7 @@ jobs:
           
           # Run the build.sh inside the container manually
           # We mount the entire build dir to /pi-gen and work there.
+          # We also fix the dubious ownership error for git.
           docker run --privileged --rm \
             --volume "$(pwd):/pi-gen" \
             --workdir /pi-gen \
@@ -120,7 +121,7 @@ jobs:
             --env PUBKEY_ONLY_SSH \
             --env BASE_IMAGE \
             pi-gen-local \
-            ./build.sh
+            bash -c "git config --global --add safe.directory /pi-gen && ./build.sh"
 
       - name: Locate built image
         id: img
