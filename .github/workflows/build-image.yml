@@ -88,12 +88,12 @@ jobs:
           cd "$BUILD_DIR"
           chmod +x build.sh build-docker.sh
           
-          # Force bookworm release
+          # Force bookworm release for pi-gen base image
           sed -i 's/trixie/bookworm/g' build-docker.sh
           sed -i 's/trixie/bookworm/g' Dockerfile
           
-          # Broad patch out for ANY qemu-user-binfmt check in ANY script
-          find . -name "*.sh" -exec sed -i 's/.*qemu-user-binfmt.*/true/g' {} +
+          # Install qemu-user-binfmt in the Docker environment so build.sh dependency check passes
+          sed -i 's/qemu-user-static/qemu-user-static qemu-user-binfmt/g' Dockerfile
           
           # 6. Manual Docker Build & Run (Replacing build-docker.sh for better path control)
           # First build the pi-gen image
