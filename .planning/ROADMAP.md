@@ -20,11 +20,12 @@ A headless Raspberry Pi 3B platform leveraging the SDRPlay RSPDX for receiving a
 
 **Goal:** UI settings for Antenna and Gain take effect immediately without restarting the DSP pipeline.
 **Depends on:** Nothing (first phase)
-**Requirements:** TBD
-**Plans:** TBD
+**Requirements:** PROP-01, PROP-02, PROP-03, PROP-04
+**Plans:** 2 plans
 
 Plans:
-- [ ] TBD
+- [ ] 01-01-PLAN.md — sdr-dsp control server + sdrplay_api_Update live dispatch
+- [ ] 01-02-PLAN.md — api-broker async forward, tests, docker-compose, end-to-end checkpoint
 
 ### Phase 2: Send Push Notifications on New Messages
 
