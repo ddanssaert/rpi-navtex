@@ -92,8 +92,8 @@ jobs:
           sed -i 's/trixie/bookworm/g' build-docker.sh
           sed -i 's/trixie/bookworm/g' Dockerfile
           
-          # Install qemu-user-binfmt in the Docker environment so build.sh dependency check passes
-          sed -i 's/qemu-user-static/qemu-user-static qemu-user-binfmt/g' Dockerfile
+          # Fix qemu dependency check since docker natively uses qemu-user-static instead of qemu-user-binfmt
+          sed -i 's/qemu-arm:qemu-user-binfmt/qemu-arm-static:qemu-user-static/g' depends
           
           # 6. Manual Docker Build & Run (Replacing build-docker.sh for better path control)
           # First build the pi-gen image
