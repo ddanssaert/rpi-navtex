@@ -72,7 +72,7 @@ jobs:
           sudo apt-get install -y coreutils quilt parted debootstrap zerofree zip \
                                 dosfstools libarchive-tools libcap2-bin grep rsync \
                                 xz-utils curl xxd file bc gpg pigz arch-test \
-                                qemu-user-static qemu-user-binfmt binfmt-support
+                                qemu-user-static binfmt-support
 
           # 3. Clone pi-gen (master branch for Bookworm support)
           git clone --depth 1 --branch master https://github.com/RPi-Distro/pi-gen.git /tmp/pi-gen
