@@ -47,8 +47,9 @@ jobs:
                 --exclude='node_modules' --exclude='deploy' --exclude='work' \
                 ./ image/stage-navtex/03-stack/files/navtex-src/
 
-      - name: Build image with pi-gen (Manual)
+      - name: Build image with manual pi-gen
         env:
+          # Pass all config as env vars for pi-gen
           IMG_NAME: navtex
           RELEASE: bookworm
           DEPLOY_COMPRESSION: xz
@@ -58,11 +59,12 @@ jobs:
           ENABLE_SSH: 1
           LOCALE_DEFAULT: en_GB.UTF-8
           KEYBOARD_KEYMAP: gb
-          KEYBOARD_LAYOUT: "English (UK)"
+          KEYBOARD_LAYOUT: English (UK)
           TIMEZONE_DEFAULT: Europe/London
-          STAGE_LIST: "stage0 stage1 stage2 ./stage-navtex"
-          PUBKEY_ONLY_SSH: 1
+          STAGE_LIST: stage0 stage1 stage2 ./stage-navtex
+          PUBKEY_ONLY_SSH: 0
           BASE_IMAGE: debian:bookworm
+          FIRST_USER_PASS: navtex
         run: |
           # 1. Register QEMU binfmt handlers
           docker run --privileged --rm tonistiigi/binfmt --install all
@@ -72,50 +74,41 @@ jobs:
           sudo apt-get install -y coreutils quilt parted debootstrap zerofree zip \
                                 dosfstools libarchive-tools libcap2-bin grep rsync \
                                 xz-utils curl xxd file bc gpg pigz arch-test \
-                                qemu-user qemu-user-static binfmt-support
+                                qemu-user qemu-user-static binfmt-support jq
 
-          # 3. Clone pi-gen
-          git clone --depth 1 --branch master https://github.com/RPi-Distro/pi-gen.git /tmp/pi-gen
+          # 3. Clone pi-gen into workspace to avoid /tmp issues
+          BUILD_DIR="$GITHUB_WORKSPACE/pi-gen-build"
+          git clone --depth 1 --branch master https://github.com/RPi-Distro/pi-gen.git "$BUILD_DIR"
           
           # 4. Prepare path and config
-          # Use hard copy instead of symlink for Docker compatibility
-          cp image/config /tmp/pi-gen/config
-          cp -r "$GITHUB_WORKSPACE/image/stage-navtex" /tmp/pi-gen/stage-navtex
+          cp image/config "$BUILD_DIR/config"
+          cp -r image/stage-navtex "$BUILD_DIR/stage-navtex"
           
           # 5. Patch pi-gen
-          cd /tmp/pi-gen
-          # Remove platform flag that causes warnings/failures on amd64
+          cd "$BUILD_DIR"
           sed -i 's/--platform linux\/386//g' build-docker.sh
-          # Force bookworm release
           sed -i 's/trixie/bookworm/g' build-docker.sh
           sed -i 's/trixie/bookworm/g' Dockerfile
-          # Patch out the qemu-user-binfmt check which fails on Ubuntu
           sed -i 's/dpkg-query -W -f=.* qemu-user-binfmt/true/g' build-docker.sh
           
           # 6. Run build-docker.sh
           export BASE_IMAGE=debian:bookworm
-          ./build-docker.sh
+          bash ./build-docker.sh
 
       - name: Locate built image
         id: img
         run: |
-          set -euo pipefail
-          # pi-gen puts built images in deploy/
-          IMG=$(find /tmp/pi-gen/deploy -name '*.img.xz' | head -n1)
+          IMG=$(find "$GITHUB_WORKSPACE/pi-gen-build/deploy" -name "*.img.xz" | head -n 1)
           if [ -z "$IMG" ]; then
-            echo "ERROR: no .img.xz produced under /tmp/pi-gen/deploy" >&2
-            ls -laR /tmp/pi-gen/deploy || true
+            echo "::error::No image found in deploy directory"
             exit 1
           fi
-          # Normalise filename to navtex.img.xz for stable URLs.
+          # Normalise filename to navtex.img.xz for stable artifacts
           cp "$IMG" "$GITHUB_WORKSPACE/navtex.img.xz"
           echo "path=$GITHUB_WORKSPACE/navtex.img.xz" >> "$GITHUB_OUTPUT"
-
-      - name: Generate SHA256 checksum
-        run: |
-          cd "$GITHUB_WORKSPACE"
-          sha256sum navtex.img.xz > navtex.img.xz.sha256
-          cat navtex.img.xz.sha256
+          
+          sha256sum "$GITHUB_WORKSPACE/navtex.img.xz" > "$GITHUB_WORKSPACE/navtex.img.xz.sha256"
+          cat "$GITHUB_WORKSPACE/navtex.img.xz.sha256"
 
       - name: Generate rpi-imager.json
         env:
@@ -125,7 +118,7 @@ jobs:
           OUT: ${{ github.workspace }}/rpi-imager.json
         run: |
           chmod +x image/scripts/generate-manifest.sh
-          ./image/scripts/generate-manifest.sh
+          bash ./image/scripts/generate-manifest.sh
           cat "$OUT"
 
       - name: Upload artifacts (workflow run)
