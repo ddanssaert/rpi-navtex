@@ -1,6 +1,7 @@
 #pragma once
 #include <functional>
 #include <string>
+#include <regex.h>
 
 class NavBSm {
 public:
@@ -10,6 +11,7 @@ public:
         int freq)>;
 
     NavBSm(unsigned int frequency, MessageCallback on_message);
+    ~NavBSm();
     void receive_bit(char bit);
 
 private:
@@ -78,6 +80,16 @@ private:
     int phase_det_disable_timer_ = 0;
     int byte_reception_enabled_ = 0;
     int message_reception_ongoing_ = 0;
+
+    // Pre-compiled regexes (compiled once in constructor, freed in destructor)
+    regex_t regex_som_{};
+    regex_t regex_eom_{};
+
+    // CCIR-476 validity: in Y=1/B=0 encoding, a valid character has exactly 3 Y-bits
+    // (= 4 Mark/B-bits). Uses GCC/Clang built-in — no C++20 required.
+    static bool ccir476_valid(unsigned char b) {
+        return __builtin_popcount(b & 0x7F) == 3;
+    }
 
     void init();
     void message_abort();

@@ -8,6 +8,7 @@ add_executable(sdr-dsp
     src/main.cpp
     src/fir1.cpp
     src/fir2.cpp
+    src/fir3.cpp
     src/decoder.cpp
     src/nav_b_sm.cpp
     src/message_publisher.cpp

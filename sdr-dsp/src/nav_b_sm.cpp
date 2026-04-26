@@ -1,12 +1,18 @@
 #include "nav_b_sm.h"
 #include <cstdio>
 #include <cstring>
-#include <regex.h>
 
 NavBSm::NavBSm(unsigned int frequency, MessageCallback on_message)
     : on_message_(std::move(on_message)), freq_(frequency)
 {
+    regcomp(&regex_som_, "(CZC|Z.ZC|ZC.C|ZCZ.) +([A-Z][A-Z])([0-9][0-9])", REG_EXTENDED);
+    regcomp(&regex_eom_, "NNN.*|N.NN.*|NN.N.*", REG_EXTENDED);
     init();
+}
+
+NavBSm::~NavBSm() {
+    regfree(&regex_som_);
+    regfree(&regex_eom_);
 }
 
 void NavBSm::init() {
@@ -43,36 +49,36 @@ void NavBSm::message_abort() {
 }
 
 void NavBSm::message_line_out() {
-    regex_t    regex_som;
-    regex_t    regex_eom;
     regmatch_t pmatch[4];
 
     if (message_reception_ongoing_) {
-        strcat(message_buffer_, line_buffer_);
-        strcat(message_buffer_, "\n");
+        size_t rem = sizeof(message_buffer_) - strlen(message_buffer_) - 1;
+        strncat(message_buffer_, line_buffer_, rem);
+        rem = sizeof(message_buffer_) - strlen(message_buffer_) - 1;
+        strncat(message_buffer_, "\n", rem);
         printf("line added: %s\n", line_buffer_);
     }
 
-    regcomp(&regex_som, "(CZC|Z.ZC|ZC.C|ZCZ.) +([A-Z][A-Z])([0-9][0-9])", REG_EXTENDED);
-    if (regexec(&regex_som, line_buffer_, 4, pmatch, 0) == 0) {
-        strcpy(message_buffer_, line_buffer_);
-        strcat(message_buffer_, "\n");
-        strncat(message_bbbb_, line_buffer_ + pmatch[2].rm_so, pmatch[2].rm_eo - pmatch[2].rm_so);
-        strncat(message_bbbb_, line_buffer_ + pmatch[3].rm_so, pmatch[3].rm_eo - pmatch[3].rm_so);
+    if (regexec(&regex_som_, line_buffer_, 4, pmatch, 0) == 0) {
+        strncpy(message_buffer_, line_buffer_, sizeof(message_buffer_) - 1);
+        message_buffer_[sizeof(message_buffer_) - 1] = '\0';
+        size_t rem = sizeof(message_buffer_) - strlen(message_buffer_) - 1;
+        strncat(message_buffer_, "\n", rem);
+        strncat(message_bbbb_, line_buffer_ + pmatch[2].rm_so,
+                (size_t)(pmatch[2].rm_eo - pmatch[2].rm_so));
+        strncat(message_bbbb_, line_buffer_ + pmatch[3].rm_so,
+                (size_t)(pmatch[3].rm_eo - pmatch[3].rm_so));
         message_bbbb_[4] = '\0';
         printf("============START OF MESSAGE============ \n");
         message_reception_ongoing_ = 1;
-    } else {
-        regcomp(&regex_eom, "NNN.*|N.NN.*|NN.N.*", REG_EXTENDED);
-        if (regexec(&regex_eom, line_buffer_, 1, pmatch, 0) == 0) {
-            if (message_reception_ongoing_) {
-                on_message_(std::string(message_bbbb_), std::string(message_buffer_), (int)freq_);
-            }
-            message_buffer_[0] = '\0';
-            message_bbbb_[0]   = '\0';
-            printf("============ END OF MESSAGE ============\n");
-            message_reception_ongoing_ = 0;
+    } else if (regexec(&regex_eom_, line_buffer_, 1, pmatch, 0) == 0) {
+        if (message_reception_ongoing_) {
+            on_message_(std::string(message_bbbb_), std::string(message_buffer_), (int)freq_);
         }
+        message_buffer_[0] = '\0';
+        message_bbbb_[0]   = '\0';
+        printf("============ END OF MESSAGE ============\n");
+        message_reception_ongoing_ = 0;
     }
     line_buffer_[0] = '\0';
 }
@@ -139,14 +145,30 @@ void NavBSm::receive_rxdx_byte(unsigned char byte_received) {
         case S_BYTE_RECEIVED_DX:
             if (dx_buf_filled_) {
                 DX_byte_ = dx_buffer_[dx_buf_ptr_];
-                if (code_to_ltrs_[(unsigned char)byte_received] != '_') {
-                    message_byte_out(byte_received);
+                unsigned char rx = (unsigned char)byte_received;
+                unsigned char dx = (unsigned char)DX_byte_;
+
+                // Stage 1: direct character — CCIR-476 parity valid
+                if (ccir476_valid(rx)) {
+                    message_byte_out(rx);
+                // Stage 2: repeat character — CCIR-476 parity valid
+                } else if (ccir476_valid(dx)) {
+                    message_byte_out(dx);
+                // Stage 3: single-bit-flip recovery on rx (7 attempts)
                 } else {
-                    if (code_to_ltrs_[(unsigned char)DX_byte_] != '_') {
-                        message_byte_out((unsigned char)DX_byte_);
-                    } else {
-                        message_byte_out('\0');
+                    unsigned char recovered = 0;
+                    bool found = false;
+                    for (int b = 0; b < 7 && !found; b++) {
+                        unsigned char flipped = rx ^ (unsigned char)(1 << b);
+                        if (ccir476_valid(flipped)) {
+                            recovered = flipped;
+                            found = true;
+                        }
                     }
+                    if (found)
+                        message_byte_out(recovered);
+                    else
+                        message_byte_out('\0');
                 }
             }
             byte_status_ = S_BYTE_RECEIVED_RX;

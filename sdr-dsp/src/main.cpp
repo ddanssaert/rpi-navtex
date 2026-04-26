@@ -2,6 +2,7 @@
 #include "iq_queue.h"
 #include "fir1.h"
 #include "fir2.h"
+#include "fir3.h"
 #include "decoder.h"
 #include "nav_b_sm.h"
 #include "message_publisher.h"
@@ -47,10 +48,14 @@ static void consumer_thread() {
     Decoder dec518([&](char bit){ nav518.receive_bit(bit); });
     Decoder dec490([&](char bit){ nav490.receive_bit(bit); });
 
+    // fir3: narrow 250 Hz bandpass, 10x decimation: 9 kHz → 900 Hz
+    Fir3 fir3_518([&](double I, double Q){ dec518.sample_in(I, Q); });
+    Fir3 fir3_490([&](double I, double Q){ dec490.sample_in(I, Q); });
+
     // fir2 splits the signal into upper (518kHz) and lower (490kHz) channels
     Fir2 fir2(
-        [&](double I, double Q){ dec518.sample_in(I, Q); },  // 518 channel
-        [&](double I, double Q){ dec490.sample_in(I, Q); }   // 490 channel
+        [&](double I, double Q){ fir3_518.sample_in(I, Q); },
+        [&](double I, double Q){ fir3_490.sample_in(I, Q); }
     );
 
     Fir1 fir1([&](double I, double Q){
@@ -109,23 +114,36 @@ int main() {
     }
 
     // Configure RF frequency and sample rate
-    // WE USE THE STANDARD 2.048 MHz BASE RATE
-    params->devParams->fsFreq.fsHz = 2048000.0;
-    params->rxChannelA->tunerParams.rfFreq.rfHz = (double)CFG_FREQ_TUNER() * 1000.0;
+    params->devParams->fsFreq.fsHz = 2016000.0;
+    params->rxChannelA->tunerParams.rfFreq.rfHz = (double)CFG_FREQ_TUNER();
     params->rxChannelA->tunerParams.gain.LNAstate = CFG_LNA_STATE();
+
+    // Zero-IF mode, 200 kHz RF bandwidth, auto LO — match reference hardware config
+    params->rxChannelA->tunerParams.ifType = sdrplay_api_IF_Zero;
+    params->rxChannelA->tunerParams.bwType = sdrplay_api_BW_0_200;
+    params->rxChannelA->tunerParams.loMode = sdrplay_api_LO_Auto;
+
+    // AGC at 5 Hz update rate — prevents overload/underload on NAVTEX LW band
+    params->rxChannelA->ctrlParams.agc.enable = sdrplay_api_AGC_5HZ;
 
     // Hardware decimation
     params->rxChannelA->ctrlParams.decimation.enable         = 1;
     params->rxChannelA->ctrlParams.decimation.decimationFactor= (unsigned char)CFG_H_DECIMATION();
 
-    // Antenna selection (A/B/HiZ — mapped from env CFG_ANTENNA)
+    // Antenna selection — guarded by device type to avoid writing wrong struct fields
     char ant = CFG_ANTENNA();
     printf("sdr-dsp: configuring antenna %c (LNA state: %d)...\n", ant, CFG_LNA_STATE());
-    switch (ant) {
-        case 'B': params->devParams->rspDxParams.antennaSel = sdrplay_api_RspDx_ANTENNA_B; break;
-        case 'C': params->devParams->rspDxParams.antennaSel = sdrplay_api_RspDx_ANTENNA_C; break;
-        default:  params->devParams->rspDxParams.antennaSel = sdrplay_api_RspDx_ANTENNA_A; break;
+    if (chosenDev.hwVer == SDRPLAY_RSPdx_ID || chosenDev.hwVer == SDRPLAY_RSPdxR2_ID) {
+        switch (ant) {
+            case 'B': params->devParams->rspDxParams.antennaSel = sdrplay_api_RspDx_ANTENNA_B; break;
+            case 'C': params->devParams->rspDxParams.antennaSel = sdrplay_api_RspDx_ANTENNA_C; break;
+            default:  params->devParams->rspDxParams.antennaSel = sdrplay_api_RspDx_ANTENNA_A; break;
+        }
+    } else if (chosenDev.hwVer == SDRPLAY_RSP2_ID) {
+        params->rxChannelA->rsp2TunerParams.antennaSel =
+            (ant == 'B') ? sdrplay_api_Rsp2_ANTENNA_B : sdrplay_api_Rsp2_ANTENNA_A;
     }
+    // RSP1, RSP1A, RSP1B have a single antenna port — no selection needed
     fflush(stdout);
 
     sdrplay_api_CallbackFnsT cbs{};
@@ -146,7 +164,7 @@ int main() {
     // Start consumer thread ONLY after hardware is ready
     std::thread consumer(consumer_thread);
 
-    printf("sdr-dsp: streaming started (%.0f kHz → fir1 → fir2 → decoder → nav_b_sm → broker)\n",
+    printf("sdr-dsp: streaming started (%.0f kHz → fir1 → fir2 → fir3 → decoder → nav_b_sm → broker)\n",
            CFG_IN_SAMPLE_RATE() / 1000.0);
     fflush(stdout);
 

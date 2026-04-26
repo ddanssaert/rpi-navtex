@@ -4,15 +4,6 @@ This document outlines the next phases of development for the RPi Navtex Receive
 
 ## Phase 1: Reliability & Signal Debugging
 
-### [BACKLOG] [BUG] Thorough Reception Investigation
-- **Problem:** Software is silent despite messages being sent.
-- **Approach:** 
-    - Implement `verbose` logging in binary DSP components (`decoder`, `fsk_demod`).
-    - Add logic to track FSK synchronization attempts in logs.
-- **Testing:** 
-    - Implement an **IQ Replay Mode** in `sdr-dsp` that reads raw `xi`/`xq` samples from a file instead of the SDRPlay API.
-    - Create/obtain test IQ files for 490kHz/518kHz Navtex signals.
-
 ### [BACKLOG] [FEAT] Dynamic Settings Propagation
 - **Requirement:** UI settings for Antenna and Gain must take effect immediately.
 - **Implementation:**

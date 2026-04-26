@@ -1,8 +1,8 @@
 #!/bin/sh
 
-# Start the SDRPlay API Service in the background and log to stdout
+# Start the SDRPlay API Service in the background and log to both stdout and file
 echo "Starting sdrplay_apiService..."
-sdrplay_apiService > /tmp/sdrplay_service.log 2>&1 &
+sdrplay_apiService 2>&1 | tee /tmp/sdrplay_service.log &
 SERVICE_PID=$!
 
 # Give it a moment to initialize

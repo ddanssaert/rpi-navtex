@@ -82,6 +82,12 @@ void MessagePublisher::publish(const std::string& bbbb,
     int sock = ::socket(AF_INET, SOCK_STREAM, 0);
     if (sock < 0) { perror("socket"); return; }
 
+    // 5-second timeout on send and receive — prevents consumer thread from blocking
+    struct timeval tv{};
+    tv.tv_sec = 5;
+    ::setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+    ::setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
+
     struct sockaddr_in serv{};
     serv.sin_family = AF_INET;
     serv.sin_port   = htons((uint16_t)port);
