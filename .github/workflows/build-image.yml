@@ -78,15 +78,19 @@ jobs:
           git clone --depth 1 --branch master https://github.com/RPi-Distro/pi-gen.git /tmp/pi-gen
           
           # 4. Prepare path and config
+          # Use hard copy instead of symlink for Docker compatibility
           cp image/config /tmp/pi-gen/config
-          ln -sfn "$GITHUB_WORKSPACE/image/stage-navtex" /tmp/pi-gen/stage-navtex
+          cp -r "$GITHUB_WORKSPACE/image/stage-navtex" /tmp/pi-gen/stage-navtex
           
-          # 5. Patch pi-gen to force amd64 and Bookworm
-          # Some versions of pi-gen try to use i386 which fails on modern runners.
+          # 5. Patch pi-gen
           cd /tmp/pi-gen
+          # Remove platform flag that causes warnings/failures on amd64
           sed -i 's/--platform linux\/386//g' build-docker.sh
+          # Force bookworm release
           sed -i 's/trixie/bookworm/g' build-docker.sh
           sed -i 's/trixie/bookworm/g' Dockerfile
+          # Patch out the qemu-user-binfmt check which fails on Ubuntu
+          sed -i 's/dpkg-query -W -f=.* qemu-user-binfmt/true/g' build-docker.sh
           
           # 6. Run build-docker.sh
           export BASE_IMAGE=debian:bookworm
