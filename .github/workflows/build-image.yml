@@ -88,21 +88,39 @@ jobs:
           cd "$BUILD_DIR"
           chmod +x build.sh build-docker.sh
           
-          # Remove platform flag that causes warnings/failures on amd64
-          sed -i 's/--platform linux\/386//g' build-docker.sh
           # Force bookworm release
           sed -i 's/trixie/bookworm/g' build-docker.sh
           sed -i 's/trixie/bookworm/g' Dockerfile
-          # Patch out the qemu-user-binfmt check which fails on Ubuntu
-          # It looks for "ok installed" in dpkg-query output
-          sed -i 's/dpkg-query -W -f=.* qemu-user-binfmt.*grep -q "ok installed"/true/g' build-docker.sh
           
-          # Diagnostic: show files
-          ls -la
+          # Broad patch out for ANY qemu-user-binfmt check
+          sed -i 's/.*qemu-user-binfmt.*/true/g' build-docker.sh
           
-          # 6. Run build-docker.sh
-          export BASE_IMAGE=debian:bookworm
-          bash ./build-docker.sh
+          # 6. Manual Docker Build & Run (Replacing build-docker.sh for better path control)
+          # First build the pi-gen image
+          docker build -t pi-gen-local .
+          
+          # Run the build.sh inside the container manually
+          # We mount the entire build dir to /pi-gen and work there.
+          docker run --privileged --rm \
+            --volume "$(pwd):/pi-gen" \
+            --workdir /pi-gen \
+            --env IMG_NAME \
+            --env RELEASE \
+            --env DEPLOY_COMPRESSION \
+            --env COMPRESSION_LEVEL \
+            --env TARGET_HOSTNAME \
+            --env FIRST_USER_NAME \
+            --env FIRST_USER_PASS \
+            --env ENABLE_SSH \
+            --env LOCALE_DEFAULT \
+            --env KEYBOARD_KEYMAP \
+            --env KEYBOARD_LAYOUT \
+            --env TIMEZONE_DEFAULT \
+            --env STAGE_LIST \
+            --env PUBKEY_ONLY_SSH \
+            --env BASE_IMAGE \
+            pi-gen-local \
+            ./build.sh
 
       - name: Locate built image
         id: img
