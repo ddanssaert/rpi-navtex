@@ -11,6 +11,6 @@ TIMEZONE_DEFAULT="Europe/London"
 STAGE_LIST="stage0 stage1 stage2 ./stage-navtex"
 DEPLOY_COMPRESSION="xz"
 COMPRESSION_LEVEL=6
-PUBKEY_ONLY_SSH=1
+PUBKEY_ONLY_SSH=0
 BASE_IMAGE="debian:bookworm"
 FIRST_USER_PASS="navtex"

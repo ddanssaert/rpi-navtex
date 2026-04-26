@@ -85,9 +85,11 @@ jobs:
           # Some versions of pi-gen try to use i386 which fails on modern runners.
           cd /tmp/pi-gen
           sed -i 's/--platform linux\/386//g' build-docker.sh
-          sed -i 's/debian:trixie/debian:bookworm/g' Dockerfile || true
+          sed -i 's/trixie/bookworm/g' build-docker.sh
+          sed -i 's/trixie/bookworm/g' Dockerfile
           
           # 6. Run build-docker.sh
+          export BASE_IMAGE=debian:bookworm
           ./build-docker.sh
 
       - name: Locate built image
