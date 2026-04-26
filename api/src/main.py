@@ -28,10 +28,6 @@ def save_config(config: SDRConfig):
 async def lifespan(app: FastAPI):
     # Ensure SSL certificates are ready
     ensure_certs()
-    
-    # Create tables
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
     yield
 
 app = FastAPI(lifespan=lifespan)

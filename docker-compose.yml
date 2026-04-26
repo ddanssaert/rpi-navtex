@@ -7,7 +7,6 @@ services:
       dockerfile: Dockerfile
     container_name: sdr-dsp
     restart: unless-stopped
-    network_mode: host
     privileged: true          # Required for USB SDR device access
     devices:
       - /dev/bus/usb:/dev/bus/usb
@@ -16,7 +15,7 @@ services:
     environment:
       - SDR_ANTENNA=A
       - SDR_LNA_STATE=0
-      - BROKER_URL=http://localhost:8000/messages
+      - BROKER_URL=http://api-broker:8000/messages
     depends_on:
       - api-broker
 
@@ -26,7 +25,8 @@ services:
       dockerfile: Dockerfile
     container_name: api-broker
     restart: unless-stopped
-    network_mode: host
+    ports:
+      - "8000:8000"
     volumes:
       - sqlite_data:/data
     environment:
@@ -38,7 +38,9 @@ services:
       dockerfile: Dockerfile
     container_name: pwa-frontend
     restart: unless-stopped
-    network_mode: host
+    ports:
+      - "5173:5173"
+      - "80:80"
     volumes:
       - sqlite_data:/data:ro
     depends_on:

@@ -31,32 +31,27 @@ if [ -n "$TARBALLS" ]; then
     docker load -i "$t"
   done
 else
-  # --- Path A (D-01): build in chroot ------------------------------------------
-  echo "D-01: building navtex images inside QEMU arm64 chroot"
-  # The pi-gen-action workflow mounts the repo at /pi-gen/stage-navtex; for local
-  # build.sh runs the wrapper bind-mounts the repo root into /tmp/navtex-src.
+  # --- Path A (D-01): Pull from registry in chroot ------------------------------
+  echo "D-01: pulling navtex images from GHCR inside QEMU arm64 chroot"
   if [ -d /tmp/navtex-src ]; then
     SRC=/tmp/navtex-src
   elif [ -d /pi-gen/stage-navtex/03-stack/files/navtex-src ]; then
     SRC=/pi-gen/stage-navtex/03-stack/files/navtex-src
   else
-    echo "ERROR: navtex source tree not found in chroot. Provide either:"
-    echo "  - /tmp/navtex-src bind mount, OR"
-    echo "  - pre-saved tarballs in image/stage-navtex/03-stack/files/*.tar"
+    echo "ERROR: navtex source tree not found in chroot."
     exit 1
   fi
 
-  cp "$SRC/docker-compose.yml" /tmp/docker-compose.yml
-  cd "$SRC"
-  docker compose -f docker-compose.yml build sdr-dsp api-broker pwa-frontend
+  # Use the production compose file for the pull
+  cp "$SRC/docker-compose.prod.yml" /tmp/docker-compose.yml
+  docker compose -f /tmp/docker-compose.yml pull
 fi
 
-# Drop the host-networked compose file at /opt/navtex (the chroot script in
-# 01-install/ already created the directory and made navtex:navtex the owner).
+# Drop the production compose file at /opt/navtex
 install -m 0644 /tmp/docker-compose.yml /opt/navtex/docker-compose.yml
 chown navtex:navtex /opt/navtex/docker-compose.yml
 
-# Stop dockerd cleanly so the storage layer flushes.
+# Stop dockerd cleanly
 kill "$DOCKERD_PID"
 wait "$DOCKERD_PID" 2>/dev/null || true
 sync
