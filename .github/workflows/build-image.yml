@@ -1,4 +1,4 @@
-name: Build Navtex Appliance Image
+name: Build and Publish Navtex Appliance
 
 on:
   push:
@@ -7,15 +7,82 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Manual tag (e.g. v0.0.0-dev) — used only for workflow_dispatch'
+        description: 'Manual tag (e.g. v0.0.1-dev)'
         required: false
         default: 'v0.0.1-dev'
 
 permissions:
-  contents: write   # required for Releases upload
+  contents: write
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME_PREFIX: ${{ github.repository }}
 
 jobs:
-  build-image:
+  publish-images:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [sdr-dsp, api, frontend]
+        include:
+          - service: sdr-dsp
+            context: ./sdr-dsp
+            image_suffix: sdr-dsp
+          - service: api
+            context: ./api
+            image_suffix: api-broker
+          - service: frontend
+            context: ./frontend
+            image_suffix: pwa-frontend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log into registry ${{ env.REGISTRY }}
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve tag
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/${{ matrix.image_suffix }}
+          tags: |
+            type=raw,value=${{ steps.tag.outputs.tag }}
+            type=raw,value=latest
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.context }}
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  build-appliance:
+    needs: publish-images
     runs-on: ubuntu-22.04
     timeout-minutes: 90
     steps:
@@ -39,8 +106,6 @@ jobs:
           df -h
 
       - name: Stage navtex source for chroot
-        # 03-stack/00-run-chroot.sh expects the navtex source at
-        # image/stage-navtex/03-stack/files/navtex-src so it can `docker compose build`.
         run: |
           mkdir -p image/stage-navtex/03-stack/files/navtex-src
           rsync -a --exclude='.git' --exclude='image' --exclude='.planning' \
@@ -49,7 +114,6 @@ jobs:
 
       - name: Build image with manual pi-gen
         env:
-          # Pass all config as env vars for pi-gen
           IMG_NAME: navtex
           RELEASE: bookworm
           DEPLOY_COMPRESSION: xz
@@ -66,42 +130,27 @@ jobs:
           BASE_IMAGE: debian:bookworm
           FIRST_USER_PASS: navtex
         run: |
-          # 1. Register QEMU binfmt handlers
           docker run --privileged --rm tonistiigi/binfmt --install all
-
-          # 2. Install host dependencies
           sudo apt-get update
           sudo apt-get install -y coreutils quilt parted debootstrap zerofree zip \
                                 dosfstools libarchive-tools libcap2-bin grep rsync \
                                 xz-utils curl xxd file bc gpg pigz arch-test \
                                 qemu-user qemu-user-static binfmt-support jq
 
-          # 3. Clone pi-gen into workspace to avoid /tmp issues
           BUILD_DIR="$GITHUB_WORKSPACE/pi-gen-build"
           git clone --depth 1 --branch master https://github.com/RPi-Distro/pi-gen.git "$BUILD_DIR"
           
-          # 4. Prepare path and config
           cp image/config "$BUILD_DIR/config"
           cp -r image/stage-navtex "$BUILD_DIR/stage-navtex"
           
-          # 5. Patch pi-gen
           cd "$BUILD_DIR"
           chmod +x build.sh build-docker.sh
-          
-          # Force bookworm release for pi-gen base image
           sed -i 's/trixie/bookworm/g' build-docker.sh
           sed -i 's/trixie/bookworm/g' Dockerfile
-          
-          # Fix qemu dependency check since docker natively uses qemu-user-static instead of qemu-user-binfmt
           sed -i 's/qemu-arm:qemu-user-binfmt/qemu-arm-static:qemu-user-static/g' depends
           
-          # 6. Manual Docker Build & Run (Replacing build-docker.sh for better path control)
-          # First build the pi-gen image
           docker build -t pi-gen-local .
           
-          # Run the build.sh inside the container manually
-          # We mount the entire build dir to /pi-gen and work there.
-          # We also fix the dubious ownership error for git.
           docker run --privileged --rm \
             --volume "$(pwd):/pi-gen" \
             --workdir /pi-gen \
@@ -126,20 +175,14 @@ jobs:
       - name: Locate built image
         id: img
         run: |
-          # Diagnostic: show deploy dir
-          ls -la "$GITHUB_WORKSPACE/pi-gen-build/deploy" || true
-          
           IMG=$(find "$GITHUB_WORKSPACE/pi-gen-build/deploy" -name "*.img.xz" | head -n 1)
           if [ -z "$IMG" ]; then
             echo "::error::No image found in deploy directory"
             exit 1
           fi
-          # Normalise filename to navtex.img.xz for stable artifacts
           cp "$IMG" "$GITHUB_WORKSPACE/navtex.img.xz"
           echo "path=$GITHUB_WORKSPACE/navtex.img.xz" >> "$GITHUB_OUTPUT"
-          
           sha256sum "$GITHUB_WORKSPACE/navtex.img.xz" > "$GITHUB_WORKSPACE/navtex.img.xz.sha256"
-          cat "$GITHUB_WORKSPACE/navtex.img.xz.sha256"
 
       - name: Generate rpi-imager.json
         env:
@@ -150,7 +193,6 @@ jobs:
         run: |
           chmod +x image/scripts/generate-manifest.sh
           bash ./image/scripts/generate-manifest.sh
-          cat "$OUT"
 
       - name: Upload artifacts (workflow run)
         uses: actions/upload-artifact@v4
@@ -175,15 +217,5 @@ jobs:
             rpi-imager.json
           body: |
             Navtex Appliance Image — ${{ steps.tag.outputs.tag }}
-
-            **How to flash:**
-            1. Open Raspberry Pi Imager.
-            2. Choose Device → Raspberry Pi 3.
-            3. Choose OS → "Use custom" or paste this URL into "Add a custom repository":
-               `https://github.com/${{ github.repository }}/releases/latest/download/rpi-imager.json`
-            4. Click the gear icon → fill in WiFi, hostname, SSH key.
-            5. Flash. The Pi boots zero-config; reach it at `http://navtex.local`.
-
-            **Fallback hotspot:** If no known WiFi is reachable, the Pi opens an open AP `Navtex-AP` (192.168.99.1).
-
+            
             SHA256 checksum: see `navtex.img.xz.sha256`.
