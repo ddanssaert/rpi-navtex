@@ -86,10 +86,19 @@ jobs:
           
           # 5. Patch pi-gen
           cd "$BUILD_DIR"
+          chmod +x build.sh build-docker.sh
+          
+          # Remove platform flag that causes warnings/failures on amd64
           sed -i 's/--platform linux\/386//g' build-docker.sh
+          # Force bookworm release
           sed -i 's/trixie/bookworm/g' build-docker.sh
           sed -i 's/trixie/bookworm/g' Dockerfile
-          sed -i 's/dpkg-query -W -f=.* qemu-user-binfmt/true/g' build-docker.sh
+          # Patch out the qemu-user-binfmt check which fails on Ubuntu
+          # It looks for "ok installed" in dpkg-query output
+          sed -i 's/dpkg-query -W -f=.* qemu-user-binfmt.*grep -q "ok installed"/true/g' build-docker.sh
+          
+          # Diagnostic: show files
+          ls -la
           
           # 6. Run build-docker.sh
           export BASE_IMAGE=debian:bookworm
@@ -98,6 +107,9 @@ jobs:
       - name: Locate built image
         id: img
         run: |
+          # Diagnostic: show deploy dir
+          ls -la "$GITHUB_WORKSPACE/pi-gen-build/deploy" || true
+          
           IMG=$(find "$GITHUB_WORKSPACE/pi-gen-build/deploy" -name "*.img.xz" | head -n 1)
           if [ -z "$IMG" ]; then
             echo "::error::No image found in deploy directory"
