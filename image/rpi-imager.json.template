@@ -1,0 +1,16 @@
+{
+  "os_list": [
+    {
+      "name": "Navtex Appliance Image",
+      "description": "RPi 3B Navtex receiver — headless, zero-config (tag __TAG__)",
+      "url": "https://github.com/__REPO__/releases/download/__TAG__/navtex.img.xz",
+      "extract_size": __EXTRACT_SIZE__,
+      "extract_sha256": "__EXTRACT_SHA256__",
+      "image_download_size": __DOWNLOAD_SIZE__,
+      "image_download_sha256": "__DOWNLOAD_SHA256__",
+      "release_date": "__RELEASE_DATE__",
+      "init_format": "systemd",
+      "devices": ["pi3"]
+    }
+  ]
+}

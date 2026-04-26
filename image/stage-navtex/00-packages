@@ -1,0 +1,9 @@
+avahi-daemon
+network-manager
+dnsmasq-base
+ca-certificates
+curl
+gnupg
+git
+xz-utils
+jq

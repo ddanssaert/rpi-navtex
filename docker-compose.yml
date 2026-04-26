@@ -6,48 +6,41 @@ services:
       context: ./sdr-dsp
       dockerfile: Dockerfile
     container_name: sdr-dsp
-    restart: on-failure
+    restart: unless-stopped
+    network_mode: host
     privileged: true          # Required for USB SDR device access
     devices:
       - /dev/bus/usb:/dev/bus/usb
-    networks:
-      - navtex_net
     volumes:
       - sqlite_data:/data
     environment:
       - SDR_ANTENNA=A
       - SDR_LNA_STATE=0
-      - BROKER_URL=http://api-broker:8000/messages
+      - BROKER_URL=http://localhost:8000/messages
     depends_on:
       - api-broker
 
   api-broker:
-    build: 
+    build:
       context: ./api
       dockerfile: Dockerfile
     container_name: api-broker
-    networks:
-      - navtex_net
+    restart: unless-stopped
+    network_mode: host
     volumes:
       - sqlite_data:/data
-    ports:
-      - "8000:8000"
 
   pwa-frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: pwa-frontend
-    networks:
-      - navtex_net
-    ports:
-      - "80:80"
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - sqlite_data:/data:ro
     depends_on:
       - api-broker
-    
-networks:
-  navtex_net:
-    driver: bridge
 
 volumes:
   sqlite_data:

@@ -15,6 +15,17 @@ This document outlines the next phases of development for the RPi Navtex Receive
 
 ## Phase 2: UI/UX & Information Architecture
 
+### [BACKLOG] [FEAT] Send push notifications on new messages
+- **Requirement:** Send push notifications on new messages.
+- **Implementation:**
+    - `api-broker` will send push notifications on new messages.
+    - `pwa-frontend` will receive push notifications on new messages.
+
+### [BACKLOG] [FEAT] Open app when clicking on push notification
+- **Requirement:** Open app when clicking on push notification.
+- **Implementation:**
+    - `pwa-frontend` will open app when clicking on push notification.
+
 ### [BACKLOG] [FEAT] Human-Readable Mapping & Filters
 - **No More Jargon:** Replace "B1" and "B2" with "Stations" and "Message Types" across the UI.
 - **Lookup Table:**

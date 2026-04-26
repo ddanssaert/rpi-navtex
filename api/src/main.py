@@ -7,6 +7,8 @@ from .models import Message
 from .schemas import MessageCreate, MessageRead
 from .broadcast import manager
 from .config_schema import SDRConfig
+from .security import ensure_certs
+from fastapi.responses import FileResponse
 import json
 import os
 
@@ -24,6 +26,9 @@ def save_config(config: SDRConfig):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Ensure SSL certificates are ready
+    ensure_certs()
+    
     # Create tables
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
@@ -46,6 +51,17 @@ def read_root():
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
+
+@app.get("/certs/ca.crt")
+async def download_ca():
+    ca_path = "/data/certs/rootCA.crt"
+    if os.path.exists(ca_path):
+        return FileResponse(
+            ca_path, 
+            media_type="application/x-x509-ca-cert",
+            filename="navtex-root-ca.crt"
+        )
+    return {"error": "CA certificate not found"}
 
 @app.post("/messages", response_model=MessageRead, status_code=status.HTTP_201_CREATED)
 async def create_message(message: MessageCreate, db: AsyncSession = Depends(get_db)):
@@ -83,3 +99,12 @@ async def update_config(config: SDRConfig):
     save_config(config)
     # In a real app, we might signal the sdr-dsp container here
     return config
+
+@app.post("/test-notify")
+async def trigger_test_notification():
+    await manager.broadcast({
+        "type": "test_notification",
+        "title": "NAVTEX Test",
+        "body": "This is a broadcast test notification from the RPi Navtex receiver."
+    })
+    return {"status": "notification_triggered"}

@@ -13,6 +13,7 @@ A headless Raspberry Pi 3B platform leveraging the SDRPlay RSPDX for receiving a
 - [ ] **Phase 5: Configurable Message Rotation** - Retention period UI and background pruning job
 - [ ] **Phase 6: Global Output Configuration** - Centralized SignalK/Garmin output settings
 - [ ] **Phase 7: Mobile UI Polish** - Mobile-specific layouts using Stitch components
+- [ ] **Phase 8: Raspberry Pi Appliance OS Image** - Flashable RPi OS image with Docker stack, headless WiFi/SSH setup, fallback hotspot
 
 ## Phase Details
 
@@ -87,6 +88,18 @@ Plans:
 Plans:
 - [ ] TBD
 
+### Phase 8: Raspberry Pi Appliance OS Image
+
+**Goal:** Produce a flashable RPi OS Lite image with the navtex Docker stack pre-installed, booting headless with zero post-flash configuration. WiFi credentials, SSH, and hostname are injected at flash time via Raspberry Pi Imager's OS customisation flow. A NetworkManager fallback hotspot (`Navtex-AP`) activates when no known network is reachable.
+**Depends on:** Nothing (can run independently)
+**Requirements:** D-01, D-02, D-03, D-04, D-05, D-06
+**Plans:** 3 plans
+
+Plans:
+- [ ] 08-01-PLAN.md — Convert docker-compose.yml to host networking (D-05)
+- [ ] 08-02-PLAN.md — pi-gen custom stage: Docker, navtex stack, avahi, AccessPopup open Navtex-AP (D-01, D-02, D-06)
+- [ ] 08-03-PLAN.md — CI release pipeline + RPi Imager manifest (D-03, D-04)
+
 ## Backlog
 
 Backlog items live at 999.x — unsequenced ideas not yet ready for active planning.
@@ -112,4 +125,5 @@ Plans:
 | 5. Message Rotation | 0/TBD | Not started | - |
 | 6. Global Output Config | 0/TBD | Not started | - |
 | 7. Mobile UI Polish | 0/TBD | Not started | - |
+| 8. Raspberry Pi Appliance OS Image | 0/TBD | Not started | - |
 | 999.5 System Diagnostics Tab | 0/TBD | Backlog | - |

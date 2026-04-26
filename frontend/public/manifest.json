@@ -1,26 +1,47 @@
 {
     "short_name": "Navtex",
     "name": "Navtex Receiver Dashboard",
+    "description": "Real-time Navtex message receiver and dashboard.",
+    "categories": [
+        "utilities",
+        "navigation"
+    ],
     "icons": [
         {
             "src": "favicon.svg",
             "sizes": "any",
             "type": "image/svg+xml",
-            "purpose": "any maskable"
+            "purpose": "any"
         },
         {
             "src": "icon-192.png",
             "type": "image/png",
-            "sizes": "192x192"
+            "sizes": "192x192",
+            "purpose": "any"
         },
         {
             "src": "icon-512.png",
             "type": "image/png",
-            "sizes": "512x512"
+            "sizes": "512x512",
+            "purpose": "any"
+        },
+        {
+            "src": "icon-maskable-192.png",
+            "type": "image/png",
+            "sizes": "192x192",
+            "purpose": "maskable"
+        },
+        {
+            "src": "icon-maskable-512.png",
+            "type": "image/png",
+            "sizes": "512x512",
+            "purpose": "maskable"
         }
     ],
-    "start_url": ".",
+    "start_url": "/",
+    "id": "/",
     "display": "standalone",
     "theme_color": "#0a192f",
-    "background_color": "#0a192f"
+    "background_color": "#0a192f",
+    "orientation": "any"
 }

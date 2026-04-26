@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:www.raspberrypi.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:www.raspberryconnect.com)",
+      "WebFetch(domain:docs.docker.com)",
+      "WebFetch(domain:forums.raspberrypi.com)"
+    ]
+  }
+}

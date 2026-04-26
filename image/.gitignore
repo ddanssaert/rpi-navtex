@@ -1,0 +1,5 @@
+deploy/
+work/
+*.img
+*.img.xz
+*.img.xz.sha256

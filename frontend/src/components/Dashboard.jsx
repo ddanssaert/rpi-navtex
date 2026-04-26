@@ -9,6 +9,7 @@ const Dashboard = () => {
     const [activeTab, setActiveTab] = useState('messages');
     const [messages, setMessages] = useState([]);
     const [isOnline, setIsOnline] = useState(false);
+    const [notifError, setNotifError] = useState('');
     const { filters, toggleStation, toggleType, isFiltered } = useFilters();
 
     useEffect(() => {
@@ -21,13 +22,57 @@ const Dashboard = () => {
         // WebSocket
         const cleanup = createWebSocket(
             (newMsg) => {
-                setMessages(prev => [newMsg, ...prev]);
+                if (newMsg.type === 'test_notification') {
+                    if ('Notification' in window && Notification.permission === 'granted') {
+                        const triggerNotif = (reg) => {
+                            if (!reg) return;
+                            reg.showNotification(newMsg.title, {
+                                body: newMsg.body,
+                                icon: '/icon-192.png',
+                                badge: '/favicon.svg'
+                            }).catch(err => {
+                                setNotifError('Notification failed: ' + err.message);
+                            });
+                        };
+
+                        if ('serviceWorker' in navigator) {
+                            navigator.serviceWorker.getRegistration().then(reg => {
+                                if (reg) triggerNotif(reg);
+                                else navigator.serviceWorker.ready.then(triggerNotif);
+                            }).catch(err => setNotifError('SW registration error: ' + err.message));
+                        } else {
+                            try {
+                                new Notification(newMsg.title, { body: newMsg.body });
+                            } catch (err) {
+                                setNotifError('Direct notification error: ' + err.message);
+                            }
+                        }
+                    } else {
+                        setNotifError('Notifications not allowed or insecure context.');
+                    }
+                } else {
+                    setMessages(prev => [newMsg, ...prev]);
+
+                    // Show push notification for real messages if not on dashboard
+                    if ('Notification' in window && Notification.permission === 'granted' && activeTab !== 'messages') {
+                        navigator.serviceWorker.getRegistration().then(reg => {
+                            if (reg) {
+                                reg.showNotification(`New NAVTEX: ${newMsg.station_id}`, {
+                                    body: newMsg.content.substring(0, 100) + '...',
+                                    icon: '/icon-192.png',
+                                    badge: '/favicon.svg',
+                                    tag: 'new-message'
+                                });
+                            }
+                        });
+                    }
+                }
             },
             (online) => setIsOnline(online)
         );
 
         return cleanup;
-    }, []);
+    }, [activeTab]);
 
     const filteredMessages = messages.filter(isFiltered);
 
@@ -77,7 +122,7 @@ const Dashboard = () => {
                     </main>
                 </>
             ) : (
-                <Settings />
+                <Settings lastNotifError={notifError} />
             )}
         </div>
     );

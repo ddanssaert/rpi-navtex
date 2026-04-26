@@ -1,0 +1,16 @@
+[connection]
+id=Navtex-AP
+type=wifi
+autoconnect=false
+interface-name=wlan0
+
+[wifi]
+mode=ap
+ssid=Navtex-AP
+
+[ipv4]
+method=shared
+address1=192.168.99.1/24
+
+[ipv6]
+method=disabled

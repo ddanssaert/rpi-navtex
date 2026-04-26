@@ -1,0 +1,17 @@
+[Unit]
+Description=Navtex Docker Stack
+Requires=docker.service
+After=docker.service network-online.target NetworkManager-wait-online.service
+Wants=network-online.target NetworkManager-wait-online.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/opt/navtex
+ExecStart=/usr/bin/docker compose up -d --wait
+ExecStop=/usr/bin/docker compose down
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

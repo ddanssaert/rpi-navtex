@@ -1,0 +1,134 @@
+name: Build Navtex Appliance Image
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Manual tag (e.g. v0.0.0-dev) — used only for workflow_dispatch'
+        required: false
+        default: 'v0.0.1-dev'
+
+permissions:
+  contents: write   # required for Releases upload
+
+jobs:
+  build-image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve tag
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Free runner disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+                      /opt/hostedtoolcache /usr/local/share/boost
+          docker system prune -af || true
+          df -h
+
+      - name: Stage navtex source for chroot
+        # 03-stack/00-run-chroot.sh expects the navtex source at
+        # image/stage-navtex/03-stack/files/navtex-src so it can `docker compose build`.
+        run: |
+          mkdir -p image/stage-navtex/03-stack/files/navtex-src
+          rsync -a --exclude='.git' --exclude='image' --exclude='.planning' \
+                --exclude='node_modules' --exclude='deploy' --exclude='work' \
+                ./ image/stage-navtex/03-stack/files/navtex-src/
+
+      - name: Build image with pi-gen
+        id: pigen
+        uses: usimd/pi-gen-action@v1
+        with:
+          image-name: navtex
+          pi-gen-version: arm64
+          stage-list: stage0 stage1 stage2 ./image/stage-navtex
+          pi-gen-dir: /tmp/pi-gen
+          increase-runner-disk-size: true
+          enable-ssh: 1
+          locale: en_GB.UTF-8
+          keyboard-keymap: gb
+          keyboard-layout: "English (UK)"
+          timezone: Europe/London
+          hostname: navtex
+          username: navtex
+          compression: xz
+          compression-level: 6
+
+      - name: Locate built image
+        id: img
+        run: |
+          set -euo pipefail
+          IMG=$(find /tmp/pi-gen/deploy -name '*.img.xz' | head -n1)
+          if [ -z "$IMG" ]; then
+            echo "ERROR: no .img.xz produced under /tmp/pi-gen/deploy" >&2
+            ls -laR /tmp/pi-gen/deploy || true
+            exit 1
+          fi
+          # Normalise filename to navtex.img.xz for stable URLs.
+          cp "$IMG" "$GITHUB_WORKSPACE/navtex.img.xz"
+          echo "path=$GITHUB_WORKSPACE/navtex.img.xz" >> "$GITHUB_OUTPUT"
+
+      - name: Generate SHA256 checksum
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          sha256sum navtex.img.xz > navtex.img.xz.sha256
+          cat navtex.img.xz.sha256
+
+      - name: Generate rpi-imager.json
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+          REPO: ${{ github.repository }}
+          IMG_PATH: ${{ steps.img.outputs.path }}
+          OUT: ${{ github.workspace }}/rpi-imager.json
+        run: |
+          chmod +x image/scripts/generate-manifest.sh
+          ./image/scripts/generate-manifest.sh
+          cat "$OUT"
+
+      - name: Upload artifacts (workflow run)
+        uses: actions/upload-artifact@v4
+        with:
+          name: navtex-image-${{ steps.tag.outputs.tag }}
+          path: |
+            navtex.img.xz
+            navtex.img.xz.sha256
+            rpi-imager.json
+          retention-days: 14
+
+      - name: Create GitHub Release and upload assets
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: ${{ steps.tag.outputs.tag }}
+          fail_on_unmatched_files: true
+          files: |
+            navtex.img.xz
+            navtex.img.xz.sha256
+            rpi-imager.json
+          body: |
+            Navtex Appliance Image — ${{ steps.tag.outputs.tag }}
+
+            **How to flash:**
+            1. Open Raspberry Pi Imager.
+            2. Choose Device → Raspberry Pi 3.
+            3. Choose OS → "Use custom" or paste this URL into "Add a custom repository":
+               `https://github.com/${{ github.repository }}/releases/latest/download/rpi-imager.json`
+            4. Click the gear icon → fill in WiFi, hostname, SSH key.
+            5. Flash. The Pi boots zero-config; reach it at `http://navtex.local`.
+
+            **Fallback hotspot:** If no known WiFi is reachable, the Pi opens an open AP `Navtex-AP` (192.168.99.1).
+
+            SHA256 checksum: see `navtex.img.xz.sha256`.
