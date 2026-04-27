@@ -23,6 +23,13 @@ inline int CFG_LNA_STATE() {
     return v ? std::atoi(v) : 0;
 }
 
+// Overridable via env var SDR_BIAS_T (0/1)
+inline unsigned char CFG_BIAS_T() {
+    const char* v = std::getenv("SDR_BIAS_T");
+    if (v && std::string(v) == "1") return 1;
+    return 0;
+}
+
 // --- API Broker ---
 // Overridable via env var BROKER_URL
 inline std::string CFG_BROKER_URL() {

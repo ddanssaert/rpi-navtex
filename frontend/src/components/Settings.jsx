@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 
 const Settings = ({ lastNotifError }) => {
-    const [config, setConfig] = useState({ antenna: 'A', lna_gain: 0 });
+    const [config, setConfig] = useState({ antenna: 'A', lna_gain: 0, bias_t: false });
     const [saving, setSaving] = useState(false);
     const [msg, setMsg] = useState('');
     const [notifStatus, setNotifStatus] = useState(
@@ -74,6 +74,19 @@ const Settings = ({ lastNotifError }) => {
                     <span className="text-accent-color font-bold">Current: {config.lna_gain}</span>
                     <span>Maximum</span>
                 </div>
+            </div>
+
+            <div className="flex items-center justify-between p-3 bg-black/20 rounded-lg border border-glass-border mb-6">
+                <div>
+                    <div className="text-sm font-medium">Bias-T Power</div>
+                    <div className="text-[10px] text-secondary uppercase">Power for active antenna</div>
+                </div>
+                <button
+                    onClick={() => setConfig(prev => ({ ...prev, bias_t: !prev.bias_t }))}
+                    className={`w-10 h-5 rounded-full transition-colors relative ${config.bias_t ? 'bg-emerald-500' : 'bg-white/10'}`}
+                >
+                    <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-transform ${config.bias_t ? 'translate-x-6' : 'translate-x-1'}`} />
+                </button>
             </div>
 
             <button

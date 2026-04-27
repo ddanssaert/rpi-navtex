@@ -15,6 +15,7 @@ services:
     environment:
       - SDR_ANTENNA=A
       - SDR_LNA_STATE=0
+      - SDR_BIAS_T=0
       - BROKER_URL=http://api-broker:8000/messages
     depends_on:
       - api-broker

@@ -120,6 +120,7 @@ int main() {
     params->devParams->fsFreq.fsHz = 2016000.0;
     params->rxChannelA->tunerParams.rfFreq.rfHz = (double)CFG_FREQ_TUNER();
     params->rxChannelA->tunerParams.gain.LNAstate = CFG_LNA_STATE();
+    params->rxChannelA->tunerParams.biasT = CFG_BIAS_T();
 
     // Zero-IF mode, 200 kHz RF bandwidth, auto LO — match reference hardware config
     params->rxChannelA->tunerParams.ifType = sdrplay_api_IF_Zero;

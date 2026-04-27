@@ -55,6 +55,12 @@ void ControlServer::start(const char* host, int port) {
                                 "application/json");
                 return;
             }
+            if (!body.contains("bias_t") || !body["bias_t"].is_boolean()) {
+                res.status = 400;
+                res.set_content("{\"status\":\"error\",\"detail\":\"bias_t must be boolean\"}",
+                                "application/json");
+                return;
+            }
             std::string ant_s = body["antenna"].get<std::string>();
             int lna = body["lna_gain"].get<int>();
             if (ant_s.size() != 1 || ant_s[0] < 'A' || ant_s[0] > 'C') {
@@ -70,15 +76,17 @@ void ControlServer::start(const char* host, int port) {
                 return;
             }
             char ant = ant_s[0];
+            bool bias_t = body["bias_t"].get<bool>();
 
             // Apply under mutex (stream callback runs on a different thread)
             std::lock_guard<std::mutex> lock(sdr_mutex_);
 
-            // 1) LNA gain — works on all RSP devices
+            // 1) LNA gain and Bias-T
             params_->rxChannelA->tunerParams.gain.LNAstate = (unsigned char)lna;
+            params_->rxChannelA->tunerParams.biasT = bias_t ? 1 : 0;
             sdrplay_api_ErrT e1 = sdrplay_api_Update(
                 device_->dev, device_->tuner,
-                sdrplay_api_Update_Tuner_Gr,
+                (sdrplay_api_UpdateT)(sdrplay_api_Update_Tuner_Gr | sdrplay_api_Update_Tuner_BiasT),
                 sdrplay_api_Update_Ext1_None);
 
             // 2) Antenna — device-specific dispatch (mirror main.cpp)
@@ -114,12 +122,13 @@ void ControlServer::start(const char* host, int port) {
                 return;
             }
 
-            printf("control_server: applied antenna=%c lna_gain=%d\n", ant, lna);
+            printf("control_server: applied antenna=%c lna_gain=%d bias_t=%d\n", ant, lna, bias_t);
             fflush(stdout);
             json ok;
             ok["status"] = "ok";
             ok["antenna"] = std::string(1, ant);
             ok["lna_gain"] = lna;
+            ok["bias_t"] = bias_t;
             res.set_content(ok.dump(), "application/json");
         });
 
