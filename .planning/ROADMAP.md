@@ -14,6 +14,8 @@ A headless Raspberry Pi 3B platform leveraging the SDRPlay RSPDX for receiving a
 - [ ] **Phase 6: Global Output Configuration** - Centralized SignalK/Garmin output settings
 - [ ] **Phase 7: Mobile UI Polish** - Mobile-specific layouts using Stitch components
 - [x] **Phase 8: Raspberry Pi Appliance OS Image** - Flashable RPi OS image with Docker stack, headless WiFi/SSH setup, fallback hotspot
+- [ ] **Phase 9: iOS Background Push Notifications** - Investigate and fix push notifications on iOS when PWA is backgrounded
+- [ ] **Phase 10: Server-Side Message Filtering for iOS** - Refactor client-side filtering to server-side to support iOS PWA constraints
 
 ## Phase Details
 
@@ -100,6 +102,26 @@ Plans:
 - [x] 08-02-PLAN.md — pi-gen custom stage: Docker, navtex stack, avahi, AccessPopup open Navtex-AP (D-01, D-02, D-06)
 - [x] 08-03-PLAN.md — CI release pipeline + RPi Imager manifest (D-03, D-04)
 
+### Phase 9: iOS Background Push Notifications
+
+**Goal:** Investigate and fix push notifications on iOS when the PWA is in the background. Android works; iOS does not deliver notifications when the app is backgrounded. See Phase 2 implementation and `frontend/public/sw.js` for current push handling via the Web Push API and service worker.
+**Depends on:** Phase 2
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD
+
+### Phase 10: Server-Side Message Filtering for iOS
+
+**Goal:** Refactor message filtering from client-side to server-side to support iOS, which blocks client-side filtering in PWAs. Filtering must remain personalized per client (per push subscription / user preferences stored server-side). See Phase 2 and Phase 4 for current filter implementation context.
+**Depends on:** Phase 4 (filter definitions should be finalised first)
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD
+
 ## Backlog
 
 Backlog items live at 999.x — unsequenced ideas not yet ready for active planning.
@@ -108,24 +130,6 @@ Use `/gsd-discuss-phase <N>` to explore, `/gsd-review-backlog` to promote.
 ### Phase 999.5: System Diagnostics Tab (BACKLOG)
 
 **Goal:** Dedicated "System" tab with real-time log streaming from all containers, hardware performance telemetry (signal level, CPU), and green/yellow/red status indicators per microservice.
-**Requirements:** TBD
-**Plans:** 0 plans
-
-Plans:
-- [ ] TBD (promote with /gsd-review-backlog when ready)
-
-### Phase 999.6: iOS Background Push Notifications (BACKLOG)
-
-**Goal:** Investigate and fix push notifications on iOS when the PWA is in the background. Android works; iOS does not deliver notifications when the app is backgrounded. See Phase 2 implementation and `frontend/public/sw.js` for current push handling via the Web Push API and service worker.
-**Requirements:** TBD
-**Plans:** 0 plans
-
-Plans:
-- [ ] TBD (promote with /gsd-review-backlog when ready)
-
-### Phase 999.7: Server-Side Message Filtering for iOS (BACKLOG)
-
-**Goal:** Refactor message filtering from client-side to server-side to support iOS, which blocks client-side filtering in PWAs. Filtering must remain personalized per client (per push subscription / user preferences stored server-side). See Phase 2 and Phase 4 for current filter implementation context.
 **Requirements:** TBD
 **Plans:** 0 plans
 
@@ -145,5 +149,5 @@ Plans:
 | 7. Mobile UI Polish | 0/TBD | Not started | - |
 | 8. Raspberry Pi Appliance OS Image | 3/3 | Done | 2026-04-27 |
 | 999.5 System Diagnostics Tab | 0/TBD | Backlog | - |
-| 999.6 iOS Background Push Notifications | 0/TBD | Backlog | - |
-| 999.7 Server-Side Message Filtering for iOS | 0/TBD | Backlog | - |
+| 9. iOS Background Push Notifications | 0/TBD | Not started | - |
+| 10. Server-Side Message Filtering for iOS | 0/TBD | Not started | - |
