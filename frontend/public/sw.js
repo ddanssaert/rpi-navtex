@@ -18,15 +18,26 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-    // Only intercept GET requests
     if (event.request.method !== 'GET') return;
 
+    const url = new URL(event.request.url);
+
+    // Define paths that must strictly bypass the Service Worker cache.
+    // Using startsWith allows for sub-routes like /messages/123 or /config/user
+    const dynamicRoutes = ['/api/', '/messages', '/config'];
+
+    const requiresNetwork = dynamicRoutes.some(route => url.pathname.startsWith(route));
+
+    if (requiresNetwork) {
+        // Return early to let the browser handle the network request natively
+        return;
+    }
+
+    // Cache-First fallback for all other GET requests (static assets)
     event.respondWith(
         caches.match(event.request).then((response) => {
             return response || fetch(event.request).catch((err) => {
                 console.error('[SW] Fetch failed:', event.request.url, err);
-                // Return a generic error response instead of letting the promise reject
-                // this prevents the white-screen error in Safari when certs are untrusted.
                 return new Response('Network error or untrusted certificate', {
                     status: 503,
                     statusText: 'Service Unavailable',
