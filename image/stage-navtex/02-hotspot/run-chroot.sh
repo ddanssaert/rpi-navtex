@@ -4,8 +4,7 @@
 # 1) Clone AccessPopup into a temp location inside the chroot.
 git clone --depth 1 https://github.com/RaspberryConnect/AccessPopup.git /tmp/AccessPopup
 
-# 2) Install the accesspopup script + systemd units manually (the upstream installer
-#    is interactive). Mirror what the installer does in non-interactive form.
+# 2) Install the accesspopup script + systemd units manually.
 install -m 0755 /tmp/AccessPopup/installconfig/accesspopup /usr/bin/accesspopup
 
 # 3) AccessPopup config — SSID Navtex-AP, NO PSK (open AP per D-06).
@@ -45,13 +44,8 @@ Unit=accesspopup.service
 WantedBy=timers.target
 EOF
 
-# 5) Drop the open NM profile so AccessPopup can activate it.
-install -d -m 0700 /etc/NetworkManager/system-connections
-install -m 0600 /tmp/Navtex-AP.nmconnection \
-                /etc/NetworkManager/system-connections/Navtex-AP.nmconnection
-
-# 6) Enable the timer.
+# 5) Enable the timer.
 systemctl enable accesspopup.timer
 
-# 7) Cleanup.
+# 6) Cleanup.
 rm -rf /tmp/AccessPopup
