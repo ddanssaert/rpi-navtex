@@ -6,14 +6,14 @@ A headless Raspberry Pi 3B platform leveraging the SDRPlay RSPDX for receiving a
 
 ## Phases
 
-- [ ] **Phase 1: Dynamic Settings Propagation** - UI settings for Antenna and Gain take effect immediately
-- [ ] **Phase 2: Send Push Notifications on New Messages** - Web Push API end-to-end with native OS toast alerts
-- [ ] **Phase 3: Open App When Clicking on Push Notification** - Notification click opens/focuses PWA
+- [x] **Phase 1: Dynamic Settings Propagation** - UI settings for Antenna and Gain take effect immediately
+- [x] **Phase 2: Send Push Notifications on New Messages** - Web Push API end-to-end with native OS toast alerts
+- [x] **Phase 3: Open App When Clicking on Push Notification** - Notification click opens/focuses PWA
 - [ ] **Phase 4: Human-Readable Mapping & Filters** - Replace B1/B2 codes with readable labels and batch filter actions
 - [ ] **Phase 5: Configurable Message Rotation** - Retention period UI and background pruning job
 - [ ] **Phase 6: Global Output Configuration** - Centralized SignalK/Garmin output settings
 - [ ] **Phase 7: Mobile UI Polish** - Mobile-specific layouts using Stitch components
-- [ ] **Phase 8: Raspberry Pi Appliance OS Image** - Flashable RPi OS image with Docker stack, headless WiFi/SSH setup, fallback hotspot
+- [x] **Phase 8: Raspberry Pi Appliance OS Image** - Flashable RPi OS image with Docker stack, headless WiFi/SSH setup, fallback hotspot
 
 ## Phase Details
 
@@ -25,8 +25,8 @@ A headless Raspberry Pi 3B platform leveraging the SDRPlay RSPDX for receiving a
 **Plans:** 2 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — sdr-dsp control server + sdrplay_api_Update live dispatch
-- [ ] 01-02-PLAN.md — api-broker async forward, tests, docker-compose, end-to-end checkpoint
+- [x] 01-01-PLAN.md — sdr-dsp control server + sdrplay_api_Update live dispatch
+- [x] 01-02-PLAN.md — api-broker async forward, tests, docker-compose, end-to-end checkpoint
 
 ### Phase 2: Send Push Notifications on New Messages
 
@@ -36,7 +36,7 @@ Plans:
 **Plans:** TBD
 
 Plans:
-- [ ] TBD
+- [x] TBD
 
 ### Phase 3: Open App When Clicking on Push Notification
 
@@ -46,7 +46,7 @@ Plans:
 **Plans:** TBD
 
 Plans:
-- [ ] TBD
+- [x] TBD
 
 ### Phase 4: Human-Readable Mapping & Filters
 
@@ -96,9 +96,9 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
-- [ ] 08-01-PLAN.md — Convert docker-compose.yml to host networking (D-05)
-- [ ] 08-02-PLAN.md — pi-gen custom stage: Docker, navtex stack, avahi, AccessPopup open Navtex-AP (D-01, D-02, D-06)
-- [ ] 08-03-PLAN.md — CI release pipeline + RPi Imager manifest (D-03, D-04)
+- [x] 08-01-PLAN.md — Convert docker-compose.yml to host networking (D-05)
+- [x] 08-02-PLAN.md — pi-gen custom stage: Docker, navtex stack, avahi, AccessPopup open Navtex-AP (D-01, D-02, D-06)
+- [x] 08-03-PLAN.md — CI release pipeline + RPi Imager manifest (D-03, D-04)
 
 ## Backlog
 
@@ -118,12 +118,12 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Dynamic Settings Propagation | 0/TBD | Not started | - |
-| 2. Send Push Notifications | 0/TBD | Not started | - |
-| 3. Push Notification Deep Link | 0/TBD | Not started | - |
+| 1. Dynamic Settings Propagation | 2/2 | Done | 2026-04-27 |
+| 2. Send Push Notifications | TBD/TBD | Done | 2026-04-27 |
+| 3. Push Notification Deep Link | TBD/TBD | Done | 2026-04-27 |
 | 4. Human-Readable Mapping | 0/TBD | Not started | - |
 | 5. Message Rotation | 0/TBD | Not started | - |
 | 6. Global Output Config | 0/TBD | Not started | - |
 | 7. Mobile UI Polish | 0/TBD | Not started | - |
-| 8. Raspberry Pi Appliance OS Image | 0/TBD | Not started | - |
+| 8. Raspberry Pi Appliance OS Image | 3/3 | Done | 2026-04-27 |
 | 999.5 System Diagnostics Tab | 0/TBD | Backlog | - |
