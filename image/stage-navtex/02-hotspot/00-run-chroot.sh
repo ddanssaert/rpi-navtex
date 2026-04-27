@@ -1,13 +1,8 @@
 #!/bin/bash -e
-# Install AccessPopup non-interactively and configure for the open Navtex-AP.
+# Configure AccessPopup for the open Navtex-AP.
+# The binary was installed by the host script at /usr/bin/accesspopup.
 
-# 1) Clone AccessPopup into a temp location inside the chroot.
-git clone --depth 1 https://github.com/RaspberryConnect/AccessPopup.git /tmp/AccessPopup
-
-# 2) Install the accesspopup script + systemd units manually.
-install -m 0755 /tmp/AccessPopup/installconfig/accesspopup /usr/bin/accesspopup
-
-# 3) AccessPopup config — SSID Navtex-AP, NO PSK (open AP per D-06).
+# 1) AccessPopup config — SSID Navtex-AP, NO PSK (open AP per D-06).
 cat > /etc/accesspopup.conf <<'EOF'
 # AccessPopup configuration
 # D-06: Navtex-AP is an OPEN access point. Leave ap_pw blank.
@@ -19,7 +14,7 @@ ap_sn='255.255.255.0'
 ap_dhcp_range='192.168.99.50,192.168.99.150,12h'
 EOF
 
-# 4) Systemd timer + service for periodic check (every 2 minutes).
+# 2) Systemd timer + service for periodic check (every 2 minutes).
 cat > /etc/systemd/system/accesspopup.service <<'EOF'
 [Unit]
 Description=AccessPopup hotspot fallback check
@@ -44,8 +39,5 @@ Unit=accesspopup.service
 WantedBy=timers.target
 EOF
 
-# 5) Enable the timer.
+# 3) Enable the timer.
 systemctl enable accesspopup.timer
-
-# 6) Cleanup.
-rm -rf /tmp/AccessPopup
