@@ -24,6 +24,7 @@ mkdir -p "$HERE/stage-navtex/03-stack/files/navtex-src"
 rsync -a --delete --exclude='.git' --exclude='image' --exclude='.planning' \
       --exclude='node_modules' --exclude='deploy' --exclude='work' \
       "$HERE/../" "$HERE/stage-navtex/03-stack/files/navtex-src/"
+cp "$HERE/stage-navtex/03-stack/files/navtex.service" /tmp/navtex.service
 
 cd "$PI_GEN_DIR"
 echo "Starting pi-gen build-docker.sh (requires sudo)..."

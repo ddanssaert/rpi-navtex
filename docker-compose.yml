@@ -31,6 +31,8 @@ services:
       - sqlite_data:/data
     environment:
       - DB_PATH=/data/navtex.db
+      - HOST_IP=192.168.2.246
+      - SDR_CONTROL_URL=http://sdr-dsp:8001/control/config
 
   pwa-frontend:
     build:

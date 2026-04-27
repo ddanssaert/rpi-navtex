@@ -11,8 +11,13 @@ from .security import ensure_certs
 from fastapi.responses import FileResponse
 import json
 import os
+import httpx
+import logging
 
-CONFIG_FILE = "/data/config.json"
+logger = logging.getLogger("api.config")
+SDR_CONTROL_URL_DEFAULT = "http://sdr-dsp:8001/control/config"
+
+CONFIG_FILE = os.getenv("CONFIG_FILE", "/data/config.json")
 
 def load_config():
     if os.path.exists(CONFIG_FILE):
@@ -90,10 +95,27 @@ async def websocket_endpoint(websocket: WebSocket):
 async def get_config():
     return load_config()
 
+async def _notify_sdr_dsp(payload: dict) -> None:
+    """Forward config change to sdr-dsp control endpoint.
+    Failures are swallowed: config.json on the shared volume is the
+    authoritative fallback that sdr-dsp reads at startup.
+    """
+    url = os.getenv("SDR_CONTROL_URL", SDR_CONTROL_URL_DEFAULT)
+    try:
+        async with httpx.AsyncClient(timeout=3.0) as client:
+            resp = await client.post(url, json=payload)
+            if resp.status_code >= 400:
+                logger.warning(
+                    "sdr-dsp control endpoint returned %d: %s",
+                    resp.status_code, resp.text[:200])
+    except httpx.RequestError as e:
+        logger.warning("sdr-dsp control endpoint unreachable (%s): %s",
+                       type(e).__name__, e)
+
 @app.post("/config", response_model=SDRConfig)
 async def update_config(config: SDRConfig):
     save_config(config)
-    # In a real app, we might signal the sdr-dsp container here
+    await _notify_sdr_dsp(config.model_dump())
     return config
 
 @app.post("/test-notify")

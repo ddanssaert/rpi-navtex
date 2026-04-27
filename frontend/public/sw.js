@@ -18,9 +18,21 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+    // Only intercept GET requests
+    if (event.request.method !== 'GET') return;
+
     event.respondWith(
         caches.match(event.request).then((response) => {
-            return response || fetch(event.request);
+            return response || fetch(event.request).catch((err) => {
+                console.error('[SW] Fetch failed:', event.request.url, err);
+                // Return a generic error response instead of letting the promise reject
+                // this prevents the white-screen error in Safari when certs are untrusted.
+                return new Response('Network error or untrusted certificate', {
+                    status: 503,
+                    statusText: 'Service Unavailable',
+                    headers: new Headers({ 'Content-Type': 'text/plain' })
+                });
+            });
         })
     );
 });

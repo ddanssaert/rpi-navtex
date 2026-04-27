@@ -12,6 +12,7 @@ add_executable(sdr-dsp
     src/decoder.cpp
     src/nav_b_sm.cpp
     src/message_publisher.cpp
+    src/control_server.cpp
 )
 
 target_include_directories(sdr-dsp PRIVATE src /usr/local/include third_party)

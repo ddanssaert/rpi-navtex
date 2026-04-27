@@ -94,8 +94,8 @@ def generate_server_cert(cert_dir, host_ip):
         f.write(server_cert.public_bytes(serialization.Encoding.PEM))
 
 def ensure_certs():
-    """Main entry point to ensure Root CA and server certs exist."""
-    cert_dir = "/data/certs"
+    """Ensure root CA and server certificates exist in /data/certs."""
+    cert_dir = os.getenv("CERT_DIR", "/data/certs")
     os.makedirs(cert_dir, exist_ok=True)
     
     if not os.path.exists(os.path.join(cert_dir, "rootCA.crt")):

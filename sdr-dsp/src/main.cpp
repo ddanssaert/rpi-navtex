@@ -12,12 +12,15 @@
 #include <thread>
 #include <atomic>
 #include <csignal>
+#include <mutex>
+#include "control_server.h"
 
 static IqQueue* g_queue = nullptr;
 static std::atomic<bool> g_running{true};
 static std::atomic<double> g_energy_sum{0.0};
 static std::atomic<long> g_energy_count{0};
 static std::atomic<short> g_last_xi{0}, g_last_xq{0};
+static std::mutex g_sdr_mutex;
 
 static void stream_callback(short* xi, short* xq,
                             sdrplay_api_StreamCbParamsT* /*params*/,
@@ -167,6 +170,11 @@ int main() {
     printf("sdr-dsp: streaming started (%.0f kHz → fir1 → fir2 → fir3 → decoder → nav_b_sm → broker)\n",
            CFG_IN_SAMPLE_RATE() / 1000.0);
     fflush(stdout);
+    
+    // Start control server for live configuration updates
+    ControlServer ctrl(&chosenDev, params, g_sdr_mutex);
+    ctrl.streaming_active = true;
+    ctrl.start("0.0.0.0", 8001);
 
     // Run until interrupted
     std::signal(SIGINT, [](int){ g_running = false; });
@@ -188,6 +196,8 @@ int main() {
     }
 
     printf("sdr-dsp: shutting down...\n"); fflush(stdout);
+    ctrl.streaming_active = false;
+    ctrl.stop();
     queue.close();
     consumer.join();
     sdrplay_api_Uninit(chosenDev.dev);
