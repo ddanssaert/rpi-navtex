@@ -286,3 +286,34 @@ body {
 .border-glass-border {
   border-color: var(--glass-border);
 }
+.toggle-switch {
+  width: 44px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  position: relative;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  padding: 0;
+  display: flex;
+  align-items: center;
+}
+
+.toggle-switch.active {
+  background-color: var(--accent-color);
+}
+
+.toggle-handle {
+  width: 18px;
+  height: 18px;
+  background: white;
+  border-radius: 50%;
+  position: absolute;
+  left: 3px;
+  transition: transform 0.2s ease;
+}
+
+.toggle-switch.active .toggle-handle {
+  transform: translateX(20px);
+}
