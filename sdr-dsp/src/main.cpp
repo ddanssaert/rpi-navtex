@@ -146,11 +146,11 @@ int main() {
             default:  params->devParams->rspDxParams.antennaSel = sdrplay_api_RspDx_ANTENNA_A; break;
         }
     } else if (chosenDev.hwVer == SDRPLAY_RSP2_ID) {
-        params->devParams->rsp2Params.biasTEnable = bias;
+        params->rxChannelA->rsp2TunerParams.biasTEnable = bias;
         params->rxChannelA->rsp2TunerParams.antennaSel =
             (ant == 'B') ? sdrplay_api_Rsp2_ANTENNA_B : sdrplay_api_Rsp2_ANTENNA_A;
     } else if (chosenDev.hwVer == SDRPLAY_RSP1A_ID) {
-        params->devParams->rsp1aParams.biasTEnable = bias;
+        params->rxChannelA->rsp1aTunerParams.biasTEnable = bias;
     }
     // RSP1, RSP1A, RSP1B have a single antenna port — no selection needed
     fflush(stdout);
