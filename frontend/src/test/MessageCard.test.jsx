@@ -13,7 +13,7 @@ const message = {
 describe('MessageCard', () => {
     it('renders resolved station label not raw code', () => {
         render(<MessageCard message={message} />);
-        expect(screen.getByText('A — Niton (UK)')).toBeInTheDocument();
+        expect(screen.getByText('A — Svalbard (Norway)')).toBeInTheDocument();
         expect(screen.queryByText(/^A$/)).not.toBeInTheDocument();
     });
 

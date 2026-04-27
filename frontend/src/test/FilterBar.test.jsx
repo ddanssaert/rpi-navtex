@@ -32,7 +32,7 @@ describe('FilterBar', () => {
         const toggleStation = vi.fn();
         render(<FilterBar filters={defaultFilters} toggleStation={toggleStation} toggleType={vi.fn()} />);
         fireEvent.click(screen.getByText(/Stations \(0 active\)/i));
-        fireEvent.click(screen.getByLabelText('A — Niton (UK)'));
+        fireEvent.click(screen.getByLabelText('A — Svalbard (Norway)'));
         expect(toggleStation).toHaveBeenCalledWith('A');
     });
 

@@ -1,34 +1,34 @@
-// NAVTEX code lookup table — European + Mediterranean focus.
-// Source of truth for human-readable station and message-type labels.
-// See ITU-R M.540 for the standard message-type assignments.
+// NAVTEX station lookup — Navarea 1 (North Atlantic, North Sea, Baltic Sea).
+// 518 kHz international assignments, overridden by 490 kHz national where assigned.
+// Source: ITU-R M.540 / Wikipedia Navarea 1 station list.
 
 export const STATION_NAMES = {
-    A: 'Niton (UK)',
-    B: 'Cullercoats (UK)',
-    C: 'Oostende (Belgium)',
-    D: 'Netherlands Coastguard',
-    E: 'Malin Head (Ireland)',
-    F: 'Ship (unassigned)',
-    G: 'Pinnacle (unassigned)',
-    H: 'Noord-Nederland',
-    I: 'IJmuiden (Netherlands)',
-    J: 'Portpatrick (UK)',
-    K: 'Cullercoats (UK, alt)',
-    L: 'Niton (UK, alt)',
-    M: 'Hamburg (Germany)',
-    N: 'Oostende (Belgium, alt)',
-    O: 'Portishead (UK)',
-    P: 'Ionian (Greece)',
-    Q: 'Corsen (France)',
-    R: 'Roma (Italy)',
-    S: 'Monsanto (Portugal)',
-    T: 'Nicosia (Cyprus)',
-    U: 'Kavala (Greece)',
-    V: 'Kerkyra (Greece)',
-    W: 'Bodo (Norway)',
-    X: 'Murmansk (Russia)',
-    Y: 'Archangel (Russia)',
-    Z: 'Split / Other'
+    A: 'Svalbard (Norway)',          // 518 kHz
+    B: 'Oostende (Belgium)',         // 490 kHz overrides Bodø
+    C: 'Portpatrick (UK)',           // 490 kHz overrides Vardø
+    D: 'Tórshavn (Faroe Islands)',   // 518 kHz
+    E: 'Saudanes (Iceland)',         // 490 kHz overrides Niton
+    F: 'Tallinn (Estonia)',          // 518 kHz
+    G: 'Cullercoats (UK)',           // 518 kHz
+    H: 'Bjuröklubb (Sweden)',        // 518 kHz
+    I: 'Niton (UK)',                 // 490 kHz overrides Grimeton
+    J: 'Gislövshammar (Sweden)',     // 518 kHz
+    K: 'Grindavik (Iceland)',        // 490 kHz overrides Niton alt
+    L: 'Pinneberg (Germany)',        // 490 kHz overrides Rogaland
+    M: 'Jeløy (Norway)',             // 518 kHz
+    N: 'Ørlandet (Norway)',          // 518 kHz
+    O: 'Portpatrick (UK)',           // 518 kHz
+    P: 'Netherlands Coastguard',     // 518 kHz
+    Q: 'Malin Head (Ireland)',       // 518 kHz
+    R: 'Saudanes (Iceland)',         // 518 kHz
+    S: 'Pinneberg (Germany)',        // 518 kHz
+    T: 'Oostende (Belgium)',         // 518 kHz
+    U: 'Cullercoats (UK)',           // 490 kHz only
+    V: 'Oostende (Belgium)',         // 518 kHz
+    W: 'Valentia (Ireland)',         // 518 kHz
+    X: 'Grindavik (Iceland)',        // 518 kHz
+    Y: 'Unassigned (Navarea 1)',
+    Z: 'Unassigned (Navarea 1)'
 };
 
 export const MESSAGE_TYPE_NAMES = {

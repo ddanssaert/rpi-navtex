@@ -11,7 +11,15 @@ describe('navtex-codes lookup', () => {
     });
 
     it('resolveStation returns label with em-dash for known code', () => {
-        expect(resolveStation('A')).toBe('A — Niton (UK)');
+        expect(resolveStation('A')).toBe('A — Svalbard (Norway)');
+    });
+
+    it('national 490 kHz station overrides international for B', () => {
+        expect(resolveStation('B')).toBe('B — Oostende (Belgium)');
+    });
+
+    it('national 490 kHz station overrides international for I', () => {
+        expect(resolveStation('I')).toBe('I — Niton (UK)');
     });
 
     it('resolveStation returns Unknown format for unrecognised code', () => {

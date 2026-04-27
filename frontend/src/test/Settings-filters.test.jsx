@@ -37,9 +37,9 @@ describe('Settings notification filter section', () => {
     it('shows checkboxes with resolved station labels when subscribed', async () => {
         render(<Settings lastNotifError={null} />);
         await waitFor(() => {
-            expect(screen.getByLabelText('A — Niton (UK)')).toBeInTheDocument();
+            expect(screen.getByLabelText('A — Svalbard (Norway)')).toBeInTheDocument();
         });
-        const checkbox = screen.getByLabelText('A — Niton (UK)');
+        const checkbox = screen.getByLabelText('A — Svalbard (Norway)');
         expect(checkbox).toHaveAttribute('type', 'checkbox');
     });
 
@@ -65,10 +65,10 @@ describe('Settings notification filter section', () => {
     it('toggling a station checkbox calls saveFiltersToDB with updated state', async () => {
         render(<Settings lastNotifError={null} />);
         await waitFor(() => {
-            expect(screen.getByLabelText('A — Niton (UK)')).toBeInTheDocument();
+            expect(screen.getByLabelText('A — Svalbard (Norway)')).toBeInTheDocument();
         });
-        fireEvent.click(screen.getByLabelText('A — Niton (UK)'));
+        fireEvent.click(screen.getByLabelText('A — Svalbard (Norway)'));
         // After click, checkbox should be checked
-        expect(screen.getByLabelText('A — Niton (UK)')).toBeChecked();
+        expect(screen.getByLabelText('A — Svalbard (Norway)')).toBeChecked();
     });
 });
