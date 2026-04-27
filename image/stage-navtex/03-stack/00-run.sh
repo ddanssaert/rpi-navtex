@@ -4,10 +4,3 @@
 # (Avoid /tmp because pi-gen mounts a tmpfs over it in on_chroot)
 mkdir -p "${ROOTFS_DIR}/navtex-src-staging"
 cp -a files/navtex-src/* "${ROOTFS_DIR}/navtex-src-staging/"
-
-on_chroot << EOF
-/run-chroot.sh
-EOF
-
-# Cleanup staging after chroot is done
-rm -rf "${ROOTFS_DIR}/navtex-src-staging"

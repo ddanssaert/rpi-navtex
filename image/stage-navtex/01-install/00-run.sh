@@ -11,8 +11,3 @@ echo "deb [arch=arm64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.d
 # 2) Install systemd units and config files (host side)
 install -m 0644 files/navtex.service "${ROOTFS_DIR}/etc/systemd/system/navtex.service"
 install -m 0644 files/avahi-daemon.conf "${ROOTFS_DIR}/etc/avahi/avahi-daemon.conf"
-
-# 3) Delegate to chroot for execution (apt, usermod, systemctl)
-on_chroot << EOF
-/run-chroot.sh
-EOF

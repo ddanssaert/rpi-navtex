@@ -30,3 +30,6 @@ docker compose -f /opt/navtex/docker-compose.yml pull
 kill "$DOCKERD_PID"
 wait "$DOCKERD_PID" 2>/dev/null || true
 sync
+
+# Purge staging directory from the rootfs
+rm -rf /navtex-src-staging
