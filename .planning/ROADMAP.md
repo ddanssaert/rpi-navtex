@@ -114,6 +114,24 @@ Use `/gsd-discuss-phase <N>` to explore, `/gsd-review-backlog` to promote.
 Plans:
 - [ ] TBD (promote with /gsd-review-backlog when ready)
 
+### Phase 999.6: iOS Background Push Notifications (BACKLOG)
+
+**Goal:** Investigate and fix push notifications on iOS when the PWA is in the background. Android works; iOS does not deliver notifications when the app is backgrounded. See Phase 2 implementation and `frontend/public/sw.js` for current push handling via the Web Push API and service worker.
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with /gsd-review-backlog when ready)
+
+### Phase 999.7: Server-Side Message Filtering for iOS (BACKLOG)
+
+**Goal:** Refactor message filtering from client-side to server-side to support iOS, which blocks client-side filtering in PWAs. Filtering must remain personalized per client (per push subscription / user preferences stored server-side). See Phase 2 and Phase 4 for current filter implementation context.
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with /gsd-review-backlog when ready)
+
 ## Progress
 
 | Phase | Plans Complete | Status | Completed |
@@ -127,3 +145,5 @@ Plans:
 | 7. Mobile UI Polish | 0/TBD | Not started | - |
 | 8. Raspberry Pi Appliance OS Image | 3/3 | Done | 2026-04-27 |
 | 999.5 System Diagnostics Tab | 0/TBD | Backlog | - |
+| 999.6 iOS Background Push Notifications | 0/TBD | Backlog | - |
+| 999.7 Server-Side Message Filtering for iOS | 0/TBD | Backlog | - |
