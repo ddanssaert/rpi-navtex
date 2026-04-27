@@ -9,11 +9,11 @@ server {
     }
 
     location /certs/ca.crt {
-        proxy_pass http://api-broker:8000/certs/ca.crt;
+        proxy_pass http://${API_BROKER_HOST}:8000/certs/ca.crt;
     }
 
     location /ws {
-        proxy_pass http://api-broker:8000/ws;
+        proxy_pass http://${API_BROKER_HOST}:8000/ws;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "Upgrade";
@@ -21,15 +21,15 @@ server {
     }
 
     location /messages {
-        proxy_pass http://api-broker:8000/messages;
+        proxy_pass http://${API_BROKER_HOST}:8000/messages;
     }
 
     location /config {
-        proxy_pass http://api-broker:8000/config;
+        proxy_pass http://${API_BROKER_HOST}:8000/config;
     }
 
     location /test-notify {
-        proxy_pass http://api-broker:8000/test-notify;
+        proxy_pass http://${API_BROKER_HOST}:8000/test-notify;
     }
 }
 
@@ -51,11 +51,11 @@ server {
     }
 
     location /certs/ca.crt {
-        proxy_pass http://api-broker:8000/certs/ca.crt;
+        proxy_pass http://${API_BROKER_HOST}:8000/certs/ca.crt;
     }
 
     location /ws {
-        proxy_pass http://api-broker:8000/ws;
+        proxy_pass http://${API_BROKER_HOST}:8000/ws;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "Upgrade";
@@ -63,14 +63,14 @@ server {
     }
 
     location /messages {
-        proxy_pass http://api-broker:8000/messages;
+        proxy_pass http://${API_BROKER_HOST}:8000/messages;
     }
 
     location /config {
-        proxy_pass http://api-broker:8000/config;
+        proxy_pass http://${API_BROKER_HOST}:8000/config;
     }
 
     location /test-notify {
-        proxy_pass http://api-broker:8000/test-notify;
+        proxy_pass http://${API_BROKER_HOST}:8000/test-notify;
     }
 }

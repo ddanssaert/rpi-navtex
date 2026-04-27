@@ -46,6 +46,8 @@ services:
       - "80:80"
     volumes:
       - sqlite_data:/data:ro
+    environment:
+      - API_BROKER_HOST=api-broker
     depends_on:
       - api-broker
 
