@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
 from .database import engine, get_db, Base
 from .models import Message, PushSubscription
-from .schemas import MessageCreate, MessageRead, PushSubscriptionCreate, PushUnsubscribe
+from .schemas import MessageCreate, MessageRead, PushSubscriptionCreate, PushUnsubscribe, PushFiltersUpdate
 from .broadcast import manager
 from .config_schema import SDRConfig
 from .security import ensure_certs
@@ -19,6 +19,15 @@ logger = logging.getLogger("api.config")
 SDR_CONTROL_URL_DEFAULT = "http://sdr-dsp:8001/control/config"
 
 CONFIG_FILE = os.getenv("CONFIG_FILE", "/data/config.json")
+
+
+def _matches_filters(sub_filters, station_id: str, message_type: str) -> bool:
+    if sub_filters is None:
+        return True
+    stations = sub_filters.get("stations", [])
+    types = sub_filters.get("types", [])
+    return (len(stations) == 0 or station_id in stations) and \
+           (len(types) == 0 or message_type in types)
 
 def load_config():
     if os.path.exists(CONFIG_FILE):
@@ -95,6 +104,8 @@ async def create_message(message: MessageCreate, db: AsyncSession = Depends(get_
     }
     
     for sub in subscriptions:
+        if not _matches_filters(sub.filters, db_message.station_id, db_message.message_type):
+            continue
         sub_info = {
             "endpoint": sub.endpoint,
             "keys": {
@@ -206,16 +217,33 @@ async def subscribe(sub: PushSubscriptionCreate, db: AsyncSession = Depends(get_
     if existing:
         existing.p256dh = sub.keys.p256dh
         existing.auth = sub.keys.auth
+        if sub.filters is not None:
+            existing.filters = sub.filters.model_dump()
     else:
         db_sub = PushSubscription(
             endpoint=sub.endpoint,
             p256dh=sub.keys.p256dh,
-            auth=sub.keys.auth
+            auth=sub.keys.auth,
+            filters=sub.filters.model_dump() if sub.filters else None
         )
         db.add(db_sub)
-    
+
     await db.commit()
     return {"status": "subscribed"}
+
+@app.put("/push/filters")
+async def update_push_filters(update: PushFiltersUpdate, db: AsyncSession = Depends(get_db)):
+    from sqlalchemy.future import select
+    from fastapi import HTTPException
+    result = await db.execute(
+        select(PushSubscription).where(PushSubscription.endpoint == update.endpoint)
+    )
+    existing = result.scalars().first()
+    if not existing:
+        raise HTTPException(status_code=404, detail="Subscription not found")
+    existing.filters = update.filters.model_dump()
+    await db.commit()
+    return {"status": "updated"}
 
 @app.delete("/push/unsubscribe")
 async def unsubscribe(unsub: PushUnsubscribe, db: AsyncSession = Depends(get_db)):

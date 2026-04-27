@@ -52,13 +52,15 @@ Plans:
 
 ### Phase 4: Human-Readable Mapping & Filters
 
-**Goal:** Replace B1/B2 codes with "Stations"/"Message Types" labels; add lookup table for A-Z stations and message types; add batch select actions and separate display vs. notification filters.
+**Goal:** Replace B1/B2 codes with "Stations"/"Message Types" labels; add lookup table for A-Z stations and message types. Notification filters in Settings.jsx use the same lookup for consistency. (Batch select dropped per user decision.)
 **Depends on:** Nothing (can run independently)
-**Requirements:** TBD
-**Plans:** TBD
+**Requirements:** D-01, D-02, D-03, D-04, D-05, D-06, D-07, D-08, D-09, D-10, D-11
+**Plans:** 3 plans
 
 Plans:
-- [ ] TBD
+- [ ] 04-01-PLAN.md — Create navtex-codes.js lookup module + update MessageCard.jsx badges
+- [ ] 04-02-PLAN.md — Rewrite FilterBar.jsx with collapsible checkbox sections
+- [ ] 04-03-PLAN.md — Update Settings.jsx notification filter UI to use lookup + checkboxes
 
 ### Phase 5: Configurable Message Rotation
 
@@ -104,23 +106,25 @@ Plans:
 
 ### Phase 9: iOS Background Push Notifications
 
-**Goal:** Investigate and fix push notifications on iOS when the PWA is in the background. Android works; iOS does not deliver notifications when the app is backgrounded. See Phase 2 implementation and `frontend/public/sw.js` for current push handling via the Web Push API and service worker.
+**Goal:** Fix iOS Web Push delivery when the PWA is backgrounded. Strip iOS-incompatible service worker options (`badge`, `renotify`), add a focus-check guard before `showNotification`, and silently re-subscribe on app open to recover from iOS silent subscription expiry.
 **Depends on:** Phase 2
-**Requirements:** TBD
-**Plans:** 0 plans
+**Requirements:** D-04, D-05, D-06, D-08
+**Plans:** 2 plans
 
 Plans:
-- [ ] TBD
+- [ ] 09-01-PLAN.md — Fix sw.js: remove `badge`/`renotify`, add focus-check guard (D-04, D-05, D-06)
+- [ ] 09-02-PLAN.md — Settings.jsx: silent re-subscription on app open when subscription expired (D-08)
 
 ### Phase 10: Server-Side Message Filtering for iOS
 
-**Goal:** Refactor message filtering from client-side to server-side to support iOS, which blocks client-side filtering in PWAs. Filtering must remain personalized per client (per push subscription / user preferences stored server-side). See Phase 2 and Phase 4 for current filter implementation context.
-**Depends on:** Phase 4 (filter definitions should be finalised first)
-**Requirements:** TBD
-**Plans:** 0 plans
+**Goal:** Refactor message filtering from client-side to server-side so iOS (which blocks client-side filtering in PWAs) and all other platforms receive only the pushes matching each subscriber's stored preferences. In-app Dashboard filtering stays in localStorage; server-side filtering is exclusively for push delivery.
+**Depends on:** Phase 9 (push subscriptions table, sw.js unconditional)
+**Requirements:** FILT-01, FILT-02, FILT-03, FILT-04
+**Plans:** 2 plans
 
 Plans:
-- [ ] TBD
+- [ ] 10-01-PLAN.md — Backend: migration 003 + filters column + _matches_filters + PUT /push/filters
+- [ ] 10-02-PLAN.md — Frontend: useFilters server sync (debounced) + Dashboard prop wiring + Settings refactor
 
 ## Backlog
 
@@ -143,7 +147,7 @@ Plans:
 | 1. Dynamic Settings Propagation | 2/2 | Done | 2026-04-27 |
 | 2. Send Push Notifications | TBD/TBD | Done | 2026-04-27 |
 | 3. Push Notification Deep Link | TBD/TBD | Done | 2026-04-27 |
-| 4. Human-Readable Mapping | 0/TBD | Not started | - |
+| 4. Human-Readable Mapping | 0/3 | Not started | - |
 | 5. Message Rotation | 0/TBD | Not started | - |
 | 6. Global Output Config | 0/TBD | Not started | - |
 | 7. Mobile UI Polish | 0/TBD | Not started | - |

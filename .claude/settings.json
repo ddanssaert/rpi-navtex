@@ -6,7 +6,31 @@
       "WebFetch(domain:github.com)",
       "WebFetch(domain:www.raspberryconnect.com)",
       "WebFetch(domain:docs.docker.com)",
-      "WebFetch(domain:forums.raspberrypi.com)"
+      "WebFetch(domain:forums.raspberrypi.com)",
+      "Bash(python3 -)",
+      "Bash(python3 -c ' *)",
+      "Bash(node __TRACKED_VAR__/.claude/get-shit-done/bin/gsd-tools.cjs frontmatter validate .planning/phases/10-server-side-message-filtering-for-ios/10-01-PLAN.md --schema plan)",
+      "Bash(node __TRACKED_VAR__/.claude/get-shit-done/bin/gsd-tools.cjs frontmatter validate .planning/phases/10-server-side-message-filtering-for-ios/10-02-PLAN.md --schema plan)",
+      "Bash(node __TRACKED_VAR__/.claude/get-shit-done/bin/gsd-tools.cjs verify plan-structure .planning/phases/10-server-side-message-filtering-for-ios/10-01-PLAN.md)",
+      "Bash(node __TRACKED_VAR__/.claude/get-shit-done/bin/gsd-tools.cjs verify plan-structure .planning/phases/10-server-side-message-filtering-for-ios/10-02-PLAN.md)",
+      "Bash(npx vitest *)",
+      "Bash(cd /home/david/git/rpi-navtex/frontend && npx vitest *)",
+      "Bash(cd /home/david/git/rpi-navtex/frontend && npm run *)",
+      "Bash(npm test *)",
+      "Bash(npm run *)",
+      "Bash(python -m pytest tests/test_push_filters.py -v)",
+      "Bash(python3 -m pytest tests/test_push_filters.py -v)",
+      "Read(//home/david/**)",
+      "Bash(/home/david/.local/bin/pytest tests/test_push_filters.py -v)",
+      "Bash(PYTHONPATH=. /home/david/.local/bin/pytest tests/test_push_filters.py -v)",
+      "Bash(PYTHONPATH=. /home/david/.local/bin/pytest tests/test_health.py tests/test_models.py -v)",
+      "Bash(pip3 show *)",
+      "Bash(/usr/bin/pip3 show *)",
+      "Bash(PYTHONPATH=. /home/david/.local/bin/pytest tests/test_push_filters.py::test_push_only_sent_to_matching_subscription -v -s)",
+      "Bash(node -e ' *)",
+      "Bash(node -e \"console.log\\('hello'\\)\")",
+      "Bash(awk '{print $2}')",
+      "Bash(xargs ls *)"
     ]
   }
 }

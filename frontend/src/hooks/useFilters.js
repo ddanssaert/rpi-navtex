@@ -1,15 +1,39 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 const STORAGE_KEY = 'navtex_filters';
+
+async function syncFiltersToServer(filters) {
+    if (!('serviceWorker' in navigator)) return;
+    try {
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.getSubscription();
+        if (!sub) return;
+        await fetch('/push/filters', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ endpoint: sub.endpoint, filters })
+        });
+    } catch (_) {}
+}
 
 const useFilters = () => {
     const [filters, setFilters] = useState(() => {
         const saved = localStorage.getItem(STORAGE_KEY);
         return saved ? JSON.parse(saved) : { stations: [], types: [] };
     });
+    const isFirstRender = useRef(true);
 
     useEffect(() => {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(filters));
+    }, [filters]);
+
+    useEffect(() => {
+        if (isFirstRender.current) {
+            isFirstRender.current = false;
+            return;
+        }
+        const timer = setTimeout(() => { syncFiltersToServer(filters); }, 800);
+        return () => clearTimeout(timer);
     }, [filters]);
 
     const toggleStation = (id) => {

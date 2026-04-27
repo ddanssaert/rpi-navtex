@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { getFilters, setFilters as saveFiltersToDB } from '../utils/db';
+import { STATION_NAMES, MESSAGE_TYPE_NAMES, resolveStation, resolveType } from '../constants/navtex-codes';
 
-const STATIONS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-const MSG_TYPES = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+const STATION_CODES = Object.keys(STATION_NAMES);
+const TYPE_CODES = Object.keys(MESSAGE_TYPE_NAMES);
 
 const Settings = ({ lastNotifError }) => {
     const [config, setConfig] = useState({ antenna: 'A', lna_gain: 0, bias_t: false });
@@ -14,15 +15,28 @@ const Settings = ({ lastNotifError }) => {
     const [isSubscribed, setIsSubscribed] = useState(false);
     const [filters, setFilters] = useState({ stations: [], types: [] });
 
+    const toggleFilter = (category, value) => {
+        setFilters(prev => {
+            const list = prev[category];
+            const newList = list.includes(value)
+                ? list.filter(v => v !== value)
+                : [...list, value];
+            const newFilters = { ...prev, [category]: newList };
+            saveFiltersToDB(newFilters);
+            return newFilters;
+        });
+    };
+
     useEffect(() => {
-        // Load filters from IndexedDB
         getFilters().then(f => setFilters(f));
 
-        // Check if already subscribed to push
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.ready.then(reg => {
                 reg.pushManager.getSubscription().then(sub => {
                     setIsSubscribed(!!sub);
+                    if (!sub && Notification.permission === 'granted') {
+                        handlePushSubscription();
+                    }
                 });
             });
         }
@@ -80,11 +94,19 @@ const Settings = ({ lastNotifError }) => {
                 applicationServerKey: public_key
             });
 
-            // 3. Send to server
+            // 3. Send to server including current filter preferences
+            const subJSON = sub.toJSON();
             const res = await fetch('/push/subscribe', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(sub)
+                body: JSON.stringify({
+                    endpoint: sub.endpoint,
+                    keys: {
+                        p256dh: subJSON.keys.p256dh,
+                        auth: subJSON.keys.auth
+                    },
+                    filters: filters
+                })
             });
 
             if (res.ok) {
@@ -116,18 +138,6 @@ const Settings = ({ lastNotifError }) => {
         } catch (err) {
             setMsg('Unsubscribe failed: ' + err.message);
         }
-    };
-
-    const toggleFilter = (category, value) => {
-        setFilters(prev => {
-            const list = prev[category];
-            const newList = list.includes(value)
-                ? list.filter(v => v !== value)
-                : [...list, value];
-            const newFilters = { ...prev, [category]: newList };
-            saveFiltersToDB(newFilters);
-            return newFilters;
-        });
     };
 
     return (
@@ -218,31 +228,43 @@ const Settings = ({ lastNotifError }) => {
 
                     <div className="mb-4">
                         <label className="block text-[10px] text-secondary uppercase mb-2">Stations</label>
-                        <div className="flex flex-wrap gap-1">
-                            {STATIONS.map(s => (
-                                <button
-                                    key={s}
-                                    onClick={() => toggleFilter('stations', s)}
-                                    className={`w-7 h-7 flex items-center justify-center rounded text-[10px] border transition-all ${filters.stations.includes(s) ? 'bg-emerald-500 border-emerald-400 text-white shadow-lg shadow-emerald-500/20' : 'bg-white/5 border-white/10 text-secondary'}`}
-                                >
-                                    {s}
-                                </button>
-                            ))}
+                        <div className="flex flex-col gap-1">
+                            {STATION_CODES.map(s => {
+                                const label = resolveStation(s);
+                                return (
+                                    <label key={s} className="flex items-center gap-2 text-xs cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            className="accent-emerald-400"
+                                            checked={filters.stations.includes(s)}
+                                            onChange={() => toggleFilter('stations', s)}
+                                            aria-label={label}
+                                        />
+                                        {label}
+                                    </label>
+                                );
+                            })}
                         </div>
                     </div>
 
                     <div>
                         <label className="block text-[10px] text-secondary uppercase mb-2">Message Types</label>
-                        <div className="flex flex-wrap gap-1">
-                            {MSG_TYPES.map(t => (
-                                <button
-                                    key={t}
-                                    onClick={() => toggleFilter('types', t)}
-                                    className={`w-7 h-7 flex items-center justify-center rounded text-[10px] border transition-all ${filters.types.includes(t) ? 'bg-amber-500 border-amber-400 text-white shadow-lg shadow-amber-500/20' : 'bg-white/5 border-white/10 text-secondary'}`}
-                                >
-                                    {t}
-                                </button>
-                            ))}
+                        <div className="flex flex-col gap-1">
+                            {TYPE_CODES.map(t => {
+                                const label = resolveType(t);
+                                return (
+                                    <label key={t} className="flex items-center gap-2 text-xs cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            className="accent-amber-400"
+                                            checked={filters.types.includes(t)}
+                                            onChange={() => toggleFilter('types', t)}
+                                            aria-label={label}
+                                        />
+                                        {label}
+                                    </label>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
@@ -280,7 +302,7 @@ const Settings = ({ lastNotifError }) => {
                     }}
                     className="w-full p-3 rounded text-sm bg-black/40 border border-glass-border hover:bg-emerald-500/10 hover:border-emerald-500/50 transition flex items-center justify-center gap-2"
                 >
-                    <span>�</span> Local Notification Test (this device only)
+                    <span>🔔</span> Local Notification Test (this device only)
                 </button>
             </div>
 

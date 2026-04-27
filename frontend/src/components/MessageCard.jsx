@@ -1,3 +1,5 @@
+import { resolveStation, resolveType } from '../constants/navtex-codes';
+
 const MessageCard = ({ message }) => {
     const date = new Date(message.timestamp).toLocaleString();
 
@@ -5,8 +7,8 @@ const MessageCard = ({ message }) => {
         <div className="glass-card mb-4">
             <div className="flex justify-between items-start mb-2">
                 <div>
-                    <span className="station-badge">{message.station_id}</span>
-                    <span className="type-badge ml-2">{message.message_type}</span>
+                    <span className="station-badge">{resolveStation(message.station_id)}</span>
+                    <span className="type-badge ml-2">{resolveType(message.message_type)}</span>
                 </div>
                 <span className="text-secondary text-sm">{date}</span>
             </div>

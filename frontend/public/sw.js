@@ -56,9 +56,7 @@ self.addEventListener('push', (event) => {
             let options = {
                 body: 'New maritime safety information available.',
                 icon: '/icon-192.png',
-                badge: '/favicon.svg',
                 tag: 'navtex-msg',
-                renotify: true,
                 data: { url: '/' }
             };
 
@@ -78,8 +76,12 @@ self.addEventListener('push', (event) => {
                 // We deliberately do not return here. We MUST proceed to render.
             }
 
-            // Guarantee a render promise is returned to the OS
-            return self.registration.showNotification(title, options);
+            const windowClients = await self.clients.matchAll({ includeUncontrolled: true, type: 'window' });
+            const focused = windowClients.some(c => c.visibilityState === 'visible');
+            if (!focused) {
+                return self.registration.showNotification(title, options);
+            }
+            return Promise.resolve();
         })()
     );
 });

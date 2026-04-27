@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 
 class MessageBase(BaseModel):
     station_id: str
@@ -22,9 +22,18 @@ class PushSubscriptionKeys(BaseModel):
     p256dh: str
     auth: str
 
+class PushFilters(BaseModel):
+    stations: List[str] = []
+    types: List[str] = []
+
 class PushSubscriptionCreate(BaseModel):
     endpoint: str
     keys: PushSubscriptionKeys
+    filters: Optional[PushFilters] = None
+
+class PushFiltersUpdate(BaseModel):
+    endpoint: str
+    filters: PushFilters
 
 class PushUnsubscribe(BaseModel):
     endpoint: str
