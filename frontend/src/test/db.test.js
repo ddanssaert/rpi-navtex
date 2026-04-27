@@ -2,6 +2,11 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { getFilters, setFilters } from '../utils/db';
 
 describe('IndexedDB utility', () => {
+    beforeEach(async () => {
+        const { setFilters } = await import('../utils/db');
+        await setFilters({ stations: [], types: [] });
+    });
+
     it('should initialize and store filters', async () => {
         const filters = {
             stations: ['A', 'B'],
