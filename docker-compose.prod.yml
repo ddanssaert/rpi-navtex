@@ -33,8 +33,6 @@ services:
     network_mode: host
     volumes:
       - sqlite_data:/data:ro
-    environment:
-      - API_BROKER_HOST=localhost
     depends_on:
       - api-broker
 
