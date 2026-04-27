@@ -172,9 +172,9 @@ const Settings = ({ lastNotifError }) => {
                 </div>
                 <button
                     onClick={() => setConfig(prev => ({ ...prev, bias_t: !prev.bias_t }))}
-                    className={`w-10 h-5 rounded-full transition-colors relative ${config.bias_t ? 'bg-emerald-500' : 'bg-white/10'}`}
+                    className={`toggle-switch ${config.bias_t ? 'active' : ''}`}
                 >
-                    <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-transform ${config.bias_t ? 'translate-x-6' : 'translate-x-1'}`} />
+                    <div className="toggle-handle" />
                 </button>
             </div>
 
