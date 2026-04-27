@@ -139,18 +139,18 @@ int main() {
     printf("sdr-dsp: configuring antenna %c (LNA: %d, Bias-T: %d)...\n", ant, CFG_LNA_STATE(), bias);
 
     if (chosenDev.hwVer == SDRPLAY_RSPdx_ID || chosenDev.hwVer == SDRPLAY_RSPdxR2_ID) {
-        params->devParams->rspDxParams.biasTEn = bias;
+        params->devParams->rspDxParams.biasTEnable = bias;
         switch (ant) {
             case 'B': params->devParams->rspDxParams.antennaSel = sdrplay_api_RspDx_ANTENNA_B; break;
             case 'C': params->devParams->rspDxParams.antennaSel = sdrplay_api_RspDx_ANTENNA_C; break;
             default:  params->devParams->rspDxParams.antennaSel = sdrplay_api_RspDx_ANTENNA_A; break;
         }
     } else if (chosenDev.hwVer == SDRPLAY_RSP2_ID) {
-        params->devParams->rsp2Params.biasTEn = bias;
+        params->devParams->rsp2Params.biasTEnable = bias;
         params->rxChannelA->rsp2TunerParams.antennaSel =
             (ant == 'B') ? sdrplay_api_Rsp2_ANTENNA_B : sdrplay_api_Rsp2_ANTENNA_A;
     } else if (chosenDev.hwVer == SDRPLAY_RSP1A_ID) {
-        params->devParams->rsp1aParams.biasTEn = bias;
+        params->devParams->rsp1aParams.biasTEnable = bias;
     }
     // RSP1, RSP1A, RSP1B have a single antenna port — no selection needed
     fflush(stdout);

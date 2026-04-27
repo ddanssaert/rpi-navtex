@@ -92,14 +92,14 @@ void ControlServer::start(const char* host, int port) {
             unsigned char bias = bias_t ? 1 : 0;
             sdrplay_api_ErrT e3 = sdrplay_api_Success;
             if (device_->hwVer == SDRPLAY_RSP1A_ID) {
-                params_->devParams->rsp1aParams.biasTEn = bias;
-                e3 = sdrplay_api_Update(device_->dev, device_->tuner, sdrplay_api_Update_None, sdrplay_api_Update_Rsp1a_BiasTControl);
+                params_->devParams->rsp1aParams.biasTEnable = bias;
+                e3 = sdrplay_api_Update(device_->dev, device_->tuner, sdrplay_api_Update_Rsp1a_BiasTControl, sdrplay_api_Update_Ext1_None);
             } else if (device_->hwVer == SDRPLAY_RSP2_ID) {
-                params_->devParams->rsp2Params.biasTEn = bias;
-                e3 = sdrplay_api_Update(device_->dev, device_->tuner, sdrplay_api_Update_None, sdrplay_api_Update_Rsp2_BiasTControl);
+                params_->devParams->rsp2Params.biasTEnable = bias;
+                e3 = sdrplay_api_Update(device_->dev, device_->tuner, sdrplay_api_Update_Rsp2_BiasTControl, sdrplay_api_Update_Ext1_None);
             } else if (device_->hwVer == SDRPLAY_RSPdx_ID || device_->hwVer == SDRPLAY_RSPdxR2_ID) {
-                params_->devParams->rspDxParams.biasTEn = bias;
-                e3 = sdrplay_api_Update(device_->dev, device_->tuner, sdrplay_api_Update_None, sdrplay_api_Update_RspDx_BiasTControl);
+                params_->devParams->rspDxParams.biasTEnable = bias;
+                e3 = sdrplay_api_Update(device_->dev, device_->tuner, sdrplay_api_Update_RspDx_BiasTControl, sdrplay_api_Update_Ext1_None);
             }
 
             // 2) Antenna — device-specific dispatch (mirror main.cpp)
