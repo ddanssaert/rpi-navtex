@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getFilters, setFilters as saveFiltersToDB } from '../utils/db';
+import { syncFiltersToServer } from '../utils/pushSync';
 import { STATION_NAMES, MESSAGE_TYPE_NAMES, resolveStation, resolveType } from '../constants/navtex-codes';
 
 const STATION_CODES = Object.keys(STATION_NAMES);
@@ -14,6 +15,7 @@ const Settings = ({ lastNotifError }) => {
     );
     const [isSubscribed, setIsSubscribed] = useState(false);
     const [filters, setFilters] = useState({ stations: [], types: [] });
+    const syncRef = useRef(null);
 
     const toggleFilter = (category, value) => {
         setFilters(prev => {
@@ -23,6 +25,12 @@ const Settings = ({ lastNotifError }) => {
                 : [...list, value];
             const newFilters = { ...prev, [category]: newList };
             saveFiltersToDB(newFilters);
+            clearTimeout(syncRef.current);
+            syncRef.current = setTimeout(() => {
+                syncFiltersToServer(newFilters);
+                setMsg('Notification filters saved.');
+                setTimeout(() => setMsg(''), 3000);
+            }, 800);
             return newFilters;
         });
     };
