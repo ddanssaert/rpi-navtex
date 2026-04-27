@@ -83,11 +83,24 @@ void ControlServer::start(const char* host, int port) {
 
             // 1) LNA gain and Bias-T
             params_->rxChannelA->tunerParams.gain.LNAstate = (unsigned char)lna;
-            params_->rxChannelA->tunerParams.biasT = bias_t ? 1 : 0;
             sdrplay_api_ErrT e1 = sdrplay_api_Update(
                 device_->dev, device_->tuner,
-                (sdrplay_api_UpdateT)(sdrplay_api_Update_Tuner_Gr | sdrplay_api_Update_Tuner_BiasT),
+                sdrplay_api_Update_Tuner_Gr,
                 sdrplay_api_Update_Ext1_None);
+
+            // 1.5) Bias-T — device-specific updates
+            unsigned char bias = bias_t ? 1 : 0;
+            sdrplay_api_ErrT e3 = sdrplay_api_Success;
+            if (device_->hwVer == SDRPLAY_RSP1A_ID) {
+                params_->devParams->rsp1aParams.biasTEn = bias;
+                e3 = sdrplay_api_Update(device_->dev, device_->tuner, sdrplay_api_Update_None, sdrplay_api_Update_Rsp1a_BiasTControl);
+            } else if (device_->hwVer == SDRPLAY_RSP2_ID) {
+                params_->devParams->rsp2Params.biasTEn = bias;
+                e3 = sdrplay_api_Update(device_->dev, device_->tuner, sdrplay_api_Update_None, sdrplay_api_Update_Rsp2_BiasTControl);
+            } else if (device_->hwVer == SDRPLAY_RSPdx_ID || device_->hwVer == SDRPLAY_RSPdxR2_ID) {
+                params_->devParams->rspDxParams.biasTEn = bias;
+                e3 = sdrplay_api_Update(device_->dev, device_->tuner, sdrplay_api_Update_None, sdrplay_api_Update_RspDx_BiasTControl);
+            }
 
             // 2) Antenna — device-specific dispatch (mirror main.cpp)
             sdrplay_api_ErrT e2 = sdrplay_api_Success;
@@ -109,16 +122,17 @@ void ControlServer::start(const char* host, int port) {
             }
             // RSP1/1A/1B: single antenna — no update call needed.
 
-            if (e1 != sdrplay_api_Success || e2 != sdrplay_api_Success) {
+            if (e1 != sdrplay_api_Success || e2 != sdrplay_api_Success || e3 != sdrplay_api_Success) {
                 res.status = 500;
                 json err;
                 err["status"] = "error";
                 err["detail"] = "sdrplay_api_Update failed";
                 err["lna_err"] = sdrplay_api_GetErrorString(e1);
                 err["antenna_err"] = sdrplay_api_GetErrorString(e2);
+                err["bias_err"] = sdrplay_api_GetErrorString(e3);
                 res.set_content(err.dump(), "application/json");
-                fprintf(stderr, "control_server: update failed lna=%s ant=%s\n",
-                        sdrplay_api_GetErrorString(e1), sdrplay_api_GetErrorString(e2));
+                fprintf(stderr, "control_server: update failed lna=%s ant=%s bias=%s\n",
+                        sdrplay_api_GetErrorString(e1), sdrplay_api_GetErrorString(e2), sdrplay_api_GetErrorString(e3));
                 return;
             }
 

@@ -120,7 +120,6 @@ int main() {
     params->devParams->fsFreq.fsHz = 2016000.0;
     params->rxChannelA->tunerParams.rfFreq.rfHz = (double)CFG_FREQ_TUNER();
     params->rxChannelA->tunerParams.gain.LNAstate = CFG_LNA_STATE();
-    params->rxChannelA->tunerParams.biasT = CFG_BIAS_T();
 
     // Zero-IF mode, 200 kHz RF bandwidth, auto LO — match reference hardware config
     params->rxChannelA->tunerParams.ifType = sdrplay_api_IF_Zero;
@@ -134,18 +133,24 @@ int main() {
     params->rxChannelA->ctrlParams.decimation.enable         = 1;
     params->rxChannelA->ctrlParams.decimation.decimationFactor= (unsigned char)CFG_H_DECIMATION();
 
-    // Antenna selection — guarded by device type to avoid writing wrong struct fields
+    // Antenna and Bias-T selection — guarded by device type
     char ant = CFG_ANTENNA();
-    printf("sdr-dsp: configuring antenna %c (LNA state: %d)...\n", ant, CFG_LNA_STATE());
+    unsigned char bias = CFG_BIAS_T();
+    printf("sdr-dsp: configuring antenna %c (LNA: %d, Bias-T: %d)...\n", ant, CFG_LNA_STATE(), bias);
+
     if (chosenDev.hwVer == SDRPLAY_RSPdx_ID || chosenDev.hwVer == SDRPLAY_RSPdxR2_ID) {
+        params->devParams->rspDxParams.biasTEn = bias;
         switch (ant) {
             case 'B': params->devParams->rspDxParams.antennaSel = sdrplay_api_RspDx_ANTENNA_B; break;
             case 'C': params->devParams->rspDxParams.antennaSel = sdrplay_api_RspDx_ANTENNA_C; break;
             default:  params->devParams->rspDxParams.antennaSel = sdrplay_api_RspDx_ANTENNA_A; break;
         }
     } else if (chosenDev.hwVer == SDRPLAY_RSP2_ID) {
+        params->devParams->rsp2Params.biasTEn = bias;
         params->rxChannelA->rsp2TunerParams.antennaSel =
             (ant == 'B') ? sdrplay_api_Rsp2_ANTENNA_B : sdrplay_api_Rsp2_ANTENNA_A;
+    } else if (chosenDev.hwVer == SDRPLAY_RSP1A_ID) {
+        params->devParams->rsp1aParams.biasTEn = bias;
     }
     // RSP1, RSP1A, RSP1B have a single antenna port — no selection needed
     fflush(stdout);
