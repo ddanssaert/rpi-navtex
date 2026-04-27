@@ -1,39 +1,26 @@
-import os
-import json
-import tempfile
 import pytest
-from fastapi.testclient import TestClient
+import os
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import sessionmaker
+from src.database import Base
+import asyncio
+
+@pytest.fixture(scope="session")
+def setup_test_env(tmp_path_factory):
+    tmp_path = tmp_path_factory.mktemp("data")
+    db_file = tmp_path / "test.db"
+    vapid_file = tmp_path / "vapid_keys.json"
+    
+    os.environ["DATABASE_URL"] = f"sqlite+aiosqlite:///{db_file}"
+    os.environ["VAPID_KEYS_FILE"] = str(vapid_file)
+    
+    yield tmp_path
 
 @pytest.fixture(autouse=True)
-def setup_test_env(monkeypatch, tmp_path):
-    """Global fixture to redirect /data paths to tmp for all tests."""
-    config_path = str(tmp_path / "config.json")
-    cert_dir = str(tmp_path / "certs")
-    
-    monkeypatch.setenv("CONFIG_FILE", config_path)
-    monkeypatch.setenv("CERT_DIR", cert_dir)
-    monkeypatch.setenv("DB_PATH", f"sqlite:///{tmp_path}/test.db")
-    monkeypatch.setenv("SDR_CONTROL_URL", "http://sdr-dsp:8001/control/config")
-    
-    # Pre-create an empty config
-    (tmp_path / "config.json").write_text("{}")
-    
-    # Force patch the module constant in case it's already imported
-    import api.src.main as main_mod
-    monkeypatch.setattr(main_mod, "CONFIG_FILE", config_path)
-    
-    import api.src.security as sec_mod
-    # Patch the ensure_certs to use the tmp cert dir
-    orig_ensure = sec_mod.ensure_certs
-    def patched_ensure():
-        monkeypatch.setenv("CERT_DIR", cert_dir)
-        return orig_ensure()
-    monkeypatch.setattr(sec_mod, "ensure_certs", patched_ensure)
-
-    return tmp_path
-
-@pytest.fixture
-def client(setup_test_env):
-    from api.src.main import app
-    with TestClient(app) as c:
-        yield c
+async def setup_db(setup_test_env):
+    from src.database import engine
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    yield
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)

@@ -20,16 +20,16 @@ describe('Settings Notification Button', () => {
         global.Notification = MockNotification;
     });
 
-    it('should have a "Send Test Notification" button', () => {
+    it('should have a "Broadcast Test" button', () => {
         render(<Settings />);
-        const button = screen.getByText(/Send Test Notification/i);
+        const button = screen.getByText(/Broadcast Test/i);
         expect(button).toBeInTheDocument();
     });
 
     it('should call /test-notify when clicking the button', async () => {
         global.fetch.mockResolvedValueOnce({ json: () => Promise.resolve({ status: 'ok' }) });
         render(<Settings />);
-        const button = screen.getByText(/Send Test Notification/i);
+        const button = screen.getByText(/Broadcast Test/i);
         fireEvent.click(button);
         expect(global.fetch).toHaveBeenCalledWith('/test-notify', expect.objectContaining({ method: 'POST' }));
     });

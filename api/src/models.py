@@ -12,3 +12,12 @@ class Message(Base):
     content = Column(Text, nullable=False)
     raw_data = Column(Text, nullable=False)
     timestamp = Column(DateTime(timezone=True), server_default=func.now())
+
+class PushSubscription(Base):
+    __tablename__ = "push_subscriptions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    endpoint = Column(String, unique=True, nullable=False)
+    p256dh = Column(String, nullable=False)
+    auth = Column(String, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())

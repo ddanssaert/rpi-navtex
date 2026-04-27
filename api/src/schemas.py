@@ -17,3 +17,14 @@ class MessageRead(MessageBase):
     
     id: int
     timestamp: datetime
+
+class PushSubscriptionKeys(BaseModel):
+    p256dh: str
+    auth: str
+
+class PushSubscriptionCreate(BaseModel):
+    endpoint: str
+    keys: PushSubscriptionKeys
+
+class PushUnsubscribe(BaseModel):
+    endpoint: str

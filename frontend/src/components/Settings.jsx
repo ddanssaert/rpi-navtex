@@ -1,4 +1,8 @@
 import { useState, useEffect } from 'react';
+import { getFilters, setFilters as saveFiltersToDB } from '../utils/db';
+
+const STATIONS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+const MSG_TYPES = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
 const Settings = ({ lastNotifError }) => {
     const [config, setConfig] = useState({ antenna: 'A', lna_gain: 0, bias_t: false });
@@ -7,6 +11,22 @@ const Settings = ({ lastNotifError }) => {
     const [notifStatus, setNotifStatus] = useState(
         'Notification' in window ? Notification.permission : 'unsupported'
     );
+    const [isSubscribed, setIsSubscribed] = useState(false);
+    const [filters, setFilters] = useState({ stations: [], types: [] });
+
+    useEffect(() => {
+        // Load filters from IndexedDB
+        getFilters().then(f => setFilters(f));
+
+        // Check if already subscribed to push
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.ready.then(reg => {
+                reg.pushManager.getSubscription().then(sub => {
+                    setIsSubscribed(!!sub);
+                });
+            });
+        }
+    }, []);
 
     useEffect(() => {
         fetch('/config')
@@ -33,11 +53,80 @@ const Settings = ({ lastNotifError }) => {
 
     const requestNotifications = () => {
         if (!('Notification' in window)) {
-            setMsg('Notifications are not supported in this browser or context (HTTPS may be required).');
+            setMsg('Notifications are not supported in this browser.');
             return;
         }
         Notification.requestPermission().then(permission => {
             setNotifStatus(permission);
+            if (permission === 'granted') {
+                handlePushSubscription();
+            }
+        });
+    };
+
+    const handlePushSubscription = async () => {
+        if (!('serviceWorker' in navigator)) return;
+
+        try {
+            const reg = await navigator.serviceWorker.ready;
+
+            // 1. Get VAPID key from server
+            const vapidRes = await fetch('/push/vapid-key');
+            const { public_key } = await vapidRes.json();
+
+            // 2. Subscribe
+            const sub = await reg.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: public_key
+            });
+
+            // 3. Send to server
+            const res = await fetch('/push/subscribe', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(sub)
+            });
+
+            if (res.ok) {
+                setIsSubscribed(true);
+                setMsg('Push notifications registered!');
+            } else {
+                throw new Error('Failed to register on server');
+            }
+        } catch (err) {
+            console.error('Push subscription failed:', err);
+            setMsg('Push subscription failed: ' + err.message);
+        }
+    };
+
+    const handleUnsubscribe = async () => {
+        try {
+            const reg = await navigator.serviceWorker.ready;
+            const sub = await reg.pushManager.getSubscription();
+            if (sub) {
+                await sub.unsubscribe();
+                await fetch('/push/unsubscribe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ endpoint: sub.endpoint })
+                });
+            }
+            setIsSubscribed(false);
+            setMsg('Unsubscribed from push notifications');
+        } catch (err) {
+            setMsg('Unsubscribe failed: ' + err.message);
+        }
+    };
+
+    const toggleFilter = (category, value) => {
+        setFilters(prev => {
+            const list = prev[category];
+            const newList = list.includes(value)
+                ? list.filter(v => v !== value)
+                : [...list, value];
+            const newFilters = { ...prev, [category]: newList };
+            saveFiltersToDB(newFilters);
+            return newFilters;
         });
     };
 
@@ -105,14 +194,59 @@ const Settings = ({ lastNotifError }) => {
 
             <div className="mb-4">
                 <label className="block text-secondary text-xs uppercase mb-1">Push Notifications</label>
-                <button
-                    onClick={requestNotifications}
-                    disabled={notifStatus === 'granted'}
-                    className={`w-full p-3 rounded text-sm transition ${notifStatus === 'granted' ? 'bg-accent-color/20 text-accent-color' : 'bg-black/40 border border-glass-border hover:bg-black/60'}`}
-                >
-                    {notifStatus === 'granted' ? '✓ Notifications Enabled' : 'Enable Push Notifications'}
-                </button>
+                {!isSubscribed ? (
+                    <button
+                        onClick={requestNotifications}
+                        className="w-full p-3 rounded text-sm bg-black/40 border border-glass-border hover:bg-emerald-500/20 hover:border-emerald-500 transition"
+                    >
+                        {notifStatus === 'granted' ? 'Enable Push on this Device' : 'Allow & Subscribe'}
+                    </button>
+                ) : (
+                    <button
+                        onClick={handleUnsubscribe}
+                        className="w-full p-3 rounded text-sm bg-rose-500/20 border border-rose-500 text-rose-200 hover:bg-rose-500/40 transition"
+                    >
+                        ✓ Subscribed (Click to Unsubscribe)
+                    </button>
+                )}
             </div>
+
+            {isSubscribed && (
+                <div className="bg-black/40 border border-glass-border p-4 rounded mb-6 animate-in fade-in duration-300">
+                    <h3 className="text-sm font-medium mb-3">Notification Filters</h3>
+                    <p className="text-[10px] text-secondary mb-4">Select which messages should trigger a push alert. If none are selected, all messages will be pushed.</p>
+
+                    <div className="mb-4">
+                        <label className="block text-[10px] text-secondary uppercase mb-2">Stations</label>
+                        <div className="flex flex-wrap gap-1">
+                            {STATIONS.map(s => (
+                                <button
+                                    key={s}
+                                    onClick={() => toggleFilter('stations', s)}
+                                    className={`w-7 h-7 flex items-center justify-center rounded text-[10px] border transition-all ${filters.stations.includes(s) ? 'bg-emerald-500 border-emerald-400 text-white shadow-lg shadow-emerald-500/20' : 'bg-white/5 border-white/10 text-secondary'}`}
+                                >
+                                    {s}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-[10px] text-secondary uppercase mb-2">Message Types</label>
+                        <div className="flex flex-wrap gap-1">
+                            {MSG_TYPES.map(t => (
+                                <button
+                                    key={t}
+                                    onClick={() => toggleFilter('types', t)}
+                                    className={`w-7 h-7 flex items-center justify-center rounded text-[10px] border transition-all ${filters.types.includes(t) ? 'bg-amber-500 border-amber-400 text-white shadow-lg shadow-amber-500/20' : 'bg-white/5 border-white/10 text-secondary'}`}
+                                >
+                                    {t}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <div className="mb-4">
                 <button
